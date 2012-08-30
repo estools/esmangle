@@ -42,7 +42,8 @@
 }(function (exports) {
     'use strict';
 
-    var Syntax,
+    var VERSION,
+        Syntax,
         NameSequence,
         ZeroSequenceCache,
         VisitorOption,
@@ -50,6 +51,9 @@
         isArray,
         scopes,
         scope;
+
+    // Sync with package.json.
+    VERSION = '0.0.1-dev';
 
     Syntax = {
         AssignmentExpression: 'AssignmentExpression',
@@ -98,6 +102,16 @@
     if (!isArray) {
         isArray = function isArray(array) {
             return Object.prototype.toString.call(array) === '[object Array]';
+        };
+    }
+
+    function assert(cond, text) { }
+
+    if (VERSION.slice(-3) === 'dev') {
+        assert = function assert(cond, text) {
+            if (!cond) {
+                throw new Error(text);
+            }
         };
     }
 
@@ -300,6 +314,8 @@
                 }
             }
         } else {
+            // this is global environment
+            assert(this.type === 'global');
         }
         this.left = null;
 
@@ -700,6 +716,7 @@
         return result;
     }
 
+    exports.version = VERSION;
     exports.generateNextName = generateNextName;
     exports.mangle = mangle;
 }));
