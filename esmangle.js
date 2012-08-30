@@ -304,7 +304,6 @@
         this.left = [];
         this.variableScope =
             (this.type === 'global' || this.type === 'function') ? this : scope.variableScope;
-        this.block.$scope = this;
 
         if (this.type === 'function') {
             variable = new Variable('arguments');
@@ -473,11 +472,6 @@
                 }
             }
         }
-    };
-
-    // detach from tree
-    Scope.prototype.detach = function detach() {
-        delete this.block.$scope;
     };
 
     Scope.isRequired = function isRequired(node) {
@@ -801,11 +795,6 @@
         // mangling names
         for (i = 0, len = scopes.length; i < len; ++i) {
             scopes[i].mangle();
-        }
-
-        // cleanup scopes
-        for (i = 0, len = scopes.length; i < len; ++i) {
-            scopes[i].detach();
         }
 
         return result;
