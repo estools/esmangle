@@ -407,7 +407,12 @@
     };
 
     Scope.prototype.detectEval = function detectEval() {
-        this.dynamic = true;
+        var current;
+        current = this;
+        do {
+            current.dynamic = true;
+            current = current.upper;
+        } while (current);
     };
 
     Scope.prototype.mangle = function mangle() {
