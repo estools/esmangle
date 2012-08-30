@@ -53,7 +53,7 @@
         scope;
 
     // Sync with package.json.
-    VERSION = '0.0.1-dev';
+    VERSION = '0.0.2-dev';
 
     Syntax = {
         AssignmentExpression: 'AssignmentExpression',
