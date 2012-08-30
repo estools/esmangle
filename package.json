@@ -1,0 +1,37 @@
+{
+    "name": "esmangle",
+    "description": "ECMAScript code mangler / minifier",
+    "homepage": "http://github.com/Constellation/esmangle.html",
+    "main": "esmangle.js",
+    "bin": {
+        "esmangle": "./bin/esmangle.js"
+    },
+    "version": "0.0.1-dev",
+    "engines": {
+        "node": ">=0.4.0"
+    },
+    "maintainers": [{
+        "name": "Yusuke Suzuki",
+        "email": "utatane.tea@gmail.com",
+        "web": "http://github.com/Constellation"
+    }],
+    "repository": {
+        "type": "git",
+        "url": "http://github.com/Constellation/esmangle.git"
+    },
+    "dependencies": {
+        "esprima": ">= 0.9.9",
+        "escodegen": ">= 0.0.5"
+    },
+    "devDependencies": {
+        "esprima": ">= 0.9.9",
+        "escodegen": ">= 0.0.5"
+    },
+    "licenses": [{
+        "type": "BSD",
+        "url": "http://github.com/Constellation/esmangle/raw/master/LICENSE.BSD"
+    }],
+    "scripts": {
+        "test": "node test/run.js"
+    }
+}
