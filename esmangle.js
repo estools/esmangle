@@ -334,7 +334,7 @@
                     current = this;
                     do {
                         current.through[ref.name] = true;
-                        current = this.upper;
+                        current = current.upper;
                     } while (current);
                 }
             }
