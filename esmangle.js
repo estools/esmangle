@@ -279,7 +279,7 @@
         this.references = [];
     }
 
-    function Scope(block, upper, opt) {
+    function Scope(block, opt) {
         var variable;
 
         this.type =
@@ -296,7 +296,7 @@
         this.references = [];
         this.left = [];
         this.variableScope =
-            (this.type === 'global' || this.type === 'function') ? this : upper.variableScope;
+            (this.type === 'global' || this.type === 'function') ? this : scope.variableScope;
         this.block.$scope = this;
 
         if (this.type === 'function') {
@@ -312,7 +312,7 @@
     }
 
     Scope.prototype.close = function close() {
-        var i, iz, ref, set, scope;
+        var i, iz, ref, set, current;
 
         // Because if this is global environment, upper is null
         if (!this.dynamic) {
@@ -331,11 +331,11 @@
                 ref = this.left[i];
                 if (!set.hasOwnProperty(ref.name)) {
                     set[ref.name] = true;
-                    scope = this;
+                    current = this;
                     do {
-                        scope.through[ref.name] = true;
-                        scope = this.upper;
-                    } while (scope);
+                        current.through[ref.name] = true;
+                        current = this.upper;
+                    } while (current);
                 }
             }
         }
@@ -571,7 +571,7 @@
             enter: function enter(node) {
                 var i, iz;
                 if (Scope.isRequired(node)) {
-                    new Scope(node, scope, {});
+                    new Scope(node, {});
                 }
 
                 switch (node.type) {
