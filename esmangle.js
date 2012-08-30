@@ -562,6 +562,11 @@
                     for (i = 0, iz = node['arguments'].length; i < iz; ++i) {
                         scope.referencing(node['arguments'][i]);
                     }
+
+                    // check this is direct call to eval
+                    if (node.callee.type === Syntax.Identifier && node.callee.name === 'eval') {
+                        scope.variableScope.detectEval();
+                    }
                     break;
 
                 case Syntax.CatchClause:
