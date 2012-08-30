@@ -327,7 +327,6 @@
     };
 
     Scope.prototype.resolve = function resolve(ref) {
-        // TODO(Constellation) use hashing
         var i, iz, variable, name;
         name = ref.identifier.name;
         if (this.set.hasOwnProperty[name]) {
