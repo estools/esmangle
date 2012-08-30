@@ -615,11 +615,17 @@
                 case Syntax.FunctionDeclaration:
                     // FunctionDeclaration name is defined in upper scope
                     scope.upper.define(node.id);
+                    for (i = 0, iz = node.params.length; i < iz; ++i) {
+                        scope.define(node.params[i]);
+                    }
                     break;
 
                 case Syntax.FunctionExpression:
                     // FunctionExpression name isn't defined in upper scope
                     scope.define(node.id);
+                    for (i = 0, iz = node.params.length; i < iz; ++i) {
+                        scope.define(node.params[i]);
+                    }
                     break;
 
                 case Syntax.Identifier:
