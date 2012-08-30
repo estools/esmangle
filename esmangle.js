@@ -310,7 +310,8 @@
         console.log('references', this.references);
 
         // Because if this is global environment, upper is null
-        if (this.upper) {
+        if (!this.dynamic) {
+            // static resolve
             for (i = 0, iz = this.left.length; i < iz; ++i) {
                 ref = this.left[i];
                 if (!this.resolve(ref)) {
@@ -318,8 +319,7 @@
                 }
             }
         } else {
-            // this is global environment
-            assert(this.type === 'global');
+            // this is global / with / function with eval environment
         }
         this.left = null;
 
