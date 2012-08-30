@@ -220,7 +220,7 @@
             return true;
         }
 
-        if (strict && isStrictModeReservedWord(id)) {
+        if (isStrictModeReservedWord(id)) {
             return true;
         }
 
@@ -312,10 +312,7 @@
     }
 
     Scope.prototype.close = function close() {
-        var i, iz, ref;
-
-        console.log('variables ', this.variables);
-        console.log('references', this.references);
+        var i, iz, ref, set, scope;
 
         // Because if this is global environment, upper is null
         if (!this.dynamic) {
@@ -328,6 +325,19 @@
             }
         } else {
             // this is global / with / function with eval environment
+            set = {};
+            for (i = 0, iz = this.left.length; i < iz; ++i) {
+                // notify all names are through to global
+                ref = this.left[i];
+                if (!set.hasOwnProperty(ref.name)) {
+                    set[ref.name] = true;
+                    scope = this;
+                    do {
+                        scope.through[ref.name] = true;
+                        scope = this.upper;
+                    } while (scope);
+                }
+            }
         }
         this.left = null;
 
@@ -353,17 +363,10 @@
     };
 
     Scope.prototype.passAsUnique = function passAsUnique(name) {
-        var i, len, ref;
         if (isKeyword(name)) {
             return false;
         }
-        for (i = 0, len = this.through.len; i < len; ++i) {
-            ref = this.through[i];
-            if (ref.name === name) {
-                return false;
-            }
-        }
-        return true;
+        return !this.through.hasOwnProperty(name);
     };
 
     Scope.prototype.generateName = function generateName() {
@@ -408,6 +411,36 @@
     };
 
     Scope.prototype.mangle = function mangle() {
+        var i, iz, j, jz, variable, name, def, ref;
+        if (this.type === 'function' || this.type === 'catch') {
+            for (i = 0, iz = this.variables.length; i < iz; ++i) {
+                variable = this.variables[i];
+
+                // Because `arguments` definition is nothing.
+                // But if `var arguments` is defined, identifiers.length !== 0
+                // and this doesn't indicate arguments.
+                if (variable.identifiers.length === 0) {
+                    // do not change names because this is special name
+                    continue;
+                }
+
+                // And because special `arguments` variable should be
+                // variables[0], generateName can produce new not used names.
+                name = this.generateName();
+
+                for (j = 0, jz = variable.identifiers.length; j < jz; ++j) {
+                    def = variable.identifiers[j];
+                    // change definition's name
+                    def.name = name;
+                }
+
+                for (j = 0, jz = variable.references.length; j < jz; ++j) {
+                    ref = variable.references[j];
+                    // change reference's name
+                    ref.identifier.name = name;
+                }
+            }
+        }
     };
 
     // detach from tree
