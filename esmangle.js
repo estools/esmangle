@@ -412,7 +412,7 @@
 
     Scope.prototype.mangle = function mangle() {
         var i, iz, j, jz, variable, name, def, ref;
-        if (this.type === 'function' || this.type === 'catch') {
+        if (!this.dynamic) {
             for (i = 0, iz = this.variables.length; i < iz; ++i) {
                 variable = this.variables[i];
 
