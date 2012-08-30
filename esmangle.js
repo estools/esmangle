@@ -305,11 +305,19 @@
         this.variableScope =
             (this.type === 'global' || this.type === 'function') ? this : scope.variableScope;
 
-        if (this.type === 'function') {
-            variable = new Variable('arguments');
-            this.taints['arguments'] = true;
-            this.set['arguments'] = variable;
-            this.variables.push(variable);
+        if (opt.naming) {
+            this.define(block.id);
+        } else {
+            if (this.type === 'function') {
+                variable = new Variable('arguments');
+                this.taints['arguments'] = true;
+                this.set['arguments'] = variable;
+                this.variables.push(variable);
+            }
+
+            if (block.type === 'FunctionExpression' && block.id) {
+                new Scope(block, { naming: true });
+            }
         }
 
         // RAII
@@ -685,8 +693,7 @@
                     break;
 
                 case Syntax.FunctionExpression:
-                    // FunctionExpression name isn't defined in upper scope
-                    scope.define(node.id);
+                    // id is defined in upper scope
                     for (i = 0, iz = node.params.length; i < iz; ++i) {
                         scope.define(node.params[i]);
                     }
@@ -789,11 +796,13 @@
             },
 
             leave: function leave(node) {
-                if (scope && node === scope.block) {
+                while (scope && node === scope.block) {
                     scope.close();
                 }
             }
         });
+
+        assert(scope === null);
 
         // mangling names
         for (i = 0, len = scopes.length; i < len; ++i) {
