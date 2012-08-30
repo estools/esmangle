@@ -21,11 +21,11 @@
     },
     "dependencies": {
         "esprima": ">= 0.9.9",
-        "escodegen": ">= 0.0.5"
+        "escodegen": ">= 0.0.6"
     },
     "devDependencies": {
         "esprima": ">= 0.9.9",
-        "escodegen": ">= 0.0.5"
+        "escodegen": ">= 0.0.6"
     },
     "licenses": [{
         "type": "BSD",
