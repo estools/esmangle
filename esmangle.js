@@ -329,7 +329,7 @@
     Scope.prototype.resolve = function resolve(ref) {
         var i, iz, variable, name;
         name = ref.identifier.name;
-        if (this.set.hasOwnProperty[name]) {
+        if (this.set.hasOwnProperty(name)) {
             variable = this.set[name];
             variable.references.push(ref);
             ref.resolved = variable;
