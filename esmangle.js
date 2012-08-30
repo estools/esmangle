@@ -264,7 +264,7 @@
         this.references = [];
     }
 
-    function Scope(block, opt) {
+    function Scope(block, upper, opt) {
         this.type =
             (block.type === 'CatchCaluse') ? 'catch' :
             (block.type === 'WithStatement') ? 'with' :
@@ -278,16 +278,17 @@
         this.variables = [];
         this.references = [];
         this.left = [];
+        this.functionScope =
+            (this.type === 'global' || this.type === 'function') ? this : upper.functionScope;
         this.block.$scope = this;
-    }
 
-    Scope.prototype.enter = function enter() {
-        scopes.push(this);
+        // RAII
         this.upper = scope;
         scope = this;
-    };
+        scopes.push(this);
+    }
 
-    Scope.prototype.leave = function leave() {
+    Scope.prototype.close = function close() {
         var i, iz, ref;
 
         // Because if this is global environment, upper is null
@@ -512,10 +513,9 @@
         // attach scope and collect / resolve names
         traverse(result, {
             enter: function enter(node) {
-                var current, i, iz;
+                var i, iz;
                 if (Scope.isRequired(node)) {
-                    current = new Scope(node, {});
-                    current.enter();
+                    new Scope(node, scope, {});
                 }
 
                 switch (node.type) {
@@ -690,7 +690,7 @@
 
             leave: function leave(node) {
                 if (scope && node === scope.block) {
-                    scope.leave();
+                    scope.close();
                 }
             }
         });
