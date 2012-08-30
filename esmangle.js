@@ -291,7 +291,7 @@
         this.tip = 'a';
         this.dynamic = this.type === 'global' || this.type === 'with';
         this.block = block;
-        this.throgh = [];
+        this.through = {};
         this.variables = [];
         this.references = [];
         this.left = [];
@@ -323,7 +323,7 @@
             for (i = 0, iz = this.left.length; i < iz; ++i) {
                 ref = this.left[i];
                 if (!this.resolve(ref)) {
-                    this.upper.delegateLeft(ref);
+                    this.delegateToUpperScope(ref);
                 }
             }
         } else {
@@ -346,8 +346,10 @@
         return false;
     };
 
-    Scope.prototype.delegateLeft = function delegateLeft(ref) {
-        this.left.push(ref);
+    Scope.prototype.delegateToUpperScope = function delegateToUpperScope(ref) {
+        assert(this.upper, 'upper should be here');
+        this.upper.left.push(ref);
+        this.through[ref.name] = true;
     };
 
     Scope.prototype.passAsUnique = function passAsUnique(name) {
@@ -355,8 +357,8 @@
         if (isKeyword(name)) {
             return false;
         }
-        for (i = 0, len = this.throgh.len; i < len; ++i) {
-            ref = this.throgh[i];
+        for (i = 0, len = this.through.len; i < len; ++i) {
+            ref = this.through[i];
             if (ref.name === name) {
                 return false;
             }
