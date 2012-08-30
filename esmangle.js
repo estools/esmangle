@@ -291,7 +291,7 @@
         this.tip = 'a';
         this.dynamic = this.type === 'global' || this.type === 'with';
         this.block = block;
-        this.through = {};
+        this.through = [];
         this.variables = [];
         this.references = [];
         this.left = [];
@@ -329,14 +329,11 @@
             for (i = 0, iz = this.left.length; i < iz; ++i) {
                 // notify all names are through to global
                 ref = this.left[i];
-                if (!set.hasOwnProperty(ref.name)) {
-                    set[ref.name] = true;
-                    current = this;
-                    do {
-                        current.through[ref.name] = true;
-                        current = current.upper;
-                    } while (current);
-                }
+                current = this;
+                do {
+                    current.through.push(ref);
+                    current = current.upper;
+                } while (current);
             }
         }
         this.left = null;
@@ -359,14 +356,20 @@
     Scope.prototype.delegateToUpperScope = function delegateToUpperScope(ref) {
         assert(this.upper, 'upper should be here');
         this.upper.left.push(ref);
-        this.through[ref.name] = true;
+        this.through.push(ref);
     };
 
     Scope.prototype.passAsUnique = function passAsUnique(name) {
+        var i, iz;
         if (isKeyword(name)) {
             return false;
         }
-        return !this.through.hasOwnProperty(name);
+        for (i = 0, iz = this.through.length; i < iz; ++i) {
+            if (this.through[i].identifier.name === name) {
+                return false;
+            }
+        }
+        return true;
     };
 
     Scope.prototype.generateName = function generateName() {
