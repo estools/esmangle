@@ -256,6 +256,12 @@
 
     function Reference(ident) {
         this.identifier = ident;
+        this.resolved = null;
+    }
+
+    function Variable(ident) {
+        this.identifier = ident;
+        this.references = [];
     }
 
     function Scope(block, opt) {
@@ -270,7 +276,8 @@
         this.block = block;
         this.throgh = [];
         this.variables = [];
-        this.reference = [];
+        this.references = [];
+        this.left = [];
         this.block.$scope = this;
     }
 
@@ -281,7 +288,38 @@
     };
 
     Scope.prototype.leave = function leave() {
+        var i, iz, ref;
+
+        // Because if this is global environment, upper is null
+        if (this.upper) {
+            for (i = 0, iz = this.left.length; i < iz; ++i) {
+                ref = this.left[i];
+                if (!this.resolve(ref)) {
+                    this.upper.delegateLeft(ref);
+                }
+            }
+        } else {
+        }
+        this.left = null;
+
         scope = this.upper;
+    };
+
+    Scope.prototype.resolve = function resolve(ref) {
+        // TODO(Constellation) use hashing
+        var i, iz, variable;
+        for (i = 0, iz = this.variables.length; i < iz; ++i) {
+            variable = this.variables[i];
+            if (variable.identifier.name === ref.identifier.name) {
+                variable.references.push(ref);
+                ref.resolved = variable;
+                break;
+            }
+        }
+    };
+
+    Scope.prototype.delegateLeft = function delegateLeft(ref) {
+        this.left.push(ref);
     };
 
     Scope.prototype.passAsUnique = function passAsUnique(name) {
@@ -316,15 +354,20 @@
     };
 
     Scope.prototype.define = function define(node) {
+        var scope;
         if (node && node.type === Syntax.Identifier) {
-            this.variables.push(node);
+            this.variables.push(new Variable(node));
         }
     };
 
     Scope.prototype.referencing = function referencing(node) {
+        var ref;
+
         // because Array element may be null
         if (node && node.type === Syntax.Identifier) {
-            this.reference.push(new Reference(node));
+            ref = new Reference(node);
+            this.references.push(ref);
+            this.left.push(ref);
         }
     };
 
@@ -631,7 +674,7 @@
                     break;
 
                 case Syntax.VariableDeclarator:
-                    scope.define(node.id);
+                    scope.getFunctionScope().define(node.id);
                     scope.referencing(node.init);
                     break;
 
