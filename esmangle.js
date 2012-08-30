@@ -595,9 +595,13 @@
                     break;
 
                 case Syntax.FunctionDeclaration:
+                    // FunctionDeclaration name is defined in upper scope
+                    scope.upper.define(node.id);
                     break;
 
                 case Syntax.FunctionExpression:
+                    // FunctionExpression name isn't defined in upper scope
+                    scope.define(node.id);
                     break;
 
                 case Syntax.Identifier:
