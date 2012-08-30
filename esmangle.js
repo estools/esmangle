@@ -269,6 +269,7 @@
         this.dynamic = this.type === 'global' || this.type === 'with';
         this.block = block;
         this.throgh = [];
+        this.variables = [];
         this.reference = [];
         this.block.$scope = this;
     }
@@ -314,7 +315,14 @@
         }
     };
 
+    Scope.prototype.define = function define(node) {
+        if (node && node.type === Syntax.Identifier) {
+            this.variables.push(node);
+        }
+    };
+
     Scope.prototype.referencing = function referencing(node) {
+        // because Array element may be null
         if (node && node.type === Syntax.Identifier) {
             this.reference.push(new Reference(node));
         }
@@ -498,6 +506,7 @@
                     break;
 
                 case Syntax.CatchClause:
+                    scope.define(node.param);
                     break;
 
                 case Syntax.ConditionalExpression:
@@ -622,6 +631,7 @@
                     break;
 
                 case Syntax.VariableDeclarator:
+                    scope.define(node.id);
                     scope.referencing(node.init);
                     break;
 
