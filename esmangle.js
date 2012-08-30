@@ -122,7 +122,11 @@
                 if (obj.hasOwnProperty(key)) {
                     val = obj[key];
                     if (typeof val === 'object' && val !== null) {
-                        val = deepCopyInernal(val, isArray(val) ? [] : {});
+                        if (val instanceof RegExp) {
+                            val = new RegExp(val);
+                        } else {
+                            val = deepCopyInernal(val, isArray(val) ? [] : {});
+                        }
                     }
                     result[key] = val;
                 }
