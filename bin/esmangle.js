@@ -39,6 +39,11 @@ if (files.length === 0) {
 
 files.forEach(function (filename) {
     var content = fs.readFileSync(filename, 'utf-8');
-    console.log(escodegen.generate(esmangle.mangle(esprima.parse(content)), { compact: true }));
+    console.log(escodegen.generate(esmangle.mangle(esprima.parse(content)), {
+        format: {
+            compact: true,
+            semicolons: false
+        }
+    }));
 });
 /* vim: set sw=4 ts=4 et tw=80 : */
