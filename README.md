@@ -20,6 +20,9 @@ A simple example: the program
     var ast = esprima.parse(code);
     var result = esmangle.mangle(ast);  // gets mangled result
 
+Or you can simply use this `esmangle` command in the shell.
+
+    $ esmangle file.js
 
 ### Note
 
