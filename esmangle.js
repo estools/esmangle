@@ -387,6 +387,9 @@
 
     Scope.prototype.passAsUnique = function passAsUnique(name) {
         var i, iz;
+        if (name === 'eval' || name === 'arguments') {
+            return false;
+        }
         if (isKeyword(name)) {
             return false;
         }
