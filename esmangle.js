@@ -278,8 +278,8 @@
         this.variables = [];
         this.references = [];
         this.left = [];
-        this.functionScope =
-            (this.type === 'global' || this.type === 'function') ? this : upper.functionScope;
+        this.variableScope =
+            (this.type === 'global' || this.type === 'function') ? this : upper.variableScope;
         this.block.$scope = this;
 
         // RAII
@@ -370,14 +370,6 @@
             this.references.push(ref);
             this.left.push(ref);
         }
-    };
-
-    Scope.prototype.getFunctionScope = function getFunctionScope() {
-        var current = this;
-        while (current && (current.type !== 'function' && current.type !== 'global')) {
-            current = current.upper;
-        }
-        return current;
     };
 
     Scope.prototype.detectEval = function detectEval() {
@@ -674,7 +666,7 @@
                     break;
 
                 case Syntax.VariableDeclarator:
-                    scope.getFunctionScope().define(node.id);
+                    scope.variableScope.define(node.id);
                     scope.referencing(node.init);
                     break;
 
