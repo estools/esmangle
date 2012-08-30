@@ -273,13 +273,15 @@
         this.resolved = null;
     }
 
-    function Variable(ident) {
-        this.name = ident.name;
-        this.identifiers = [ ident ];
+    function Variable(name) {
+        this.name = name;
+        this.identifiers = [];
         this.references = [];
     }
 
     function Scope(block, upper, opt) {
+        var variable;
+
         this.type =
             (block.type === 'CatchCaluse') ? 'catch' :
             (block.type === 'WithStatement') ? 'with' :
@@ -296,6 +298,12 @@
         this.variableScope =
             (this.type === 'global' || this.type === 'function') ? this : upper.variableScope;
         this.block.$scope = this;
+
+        if (this.type === 'function') {
+            variable = new Variable('arguments');
+            this.set['arguments'] = variable;
+            this.variables.push(variable);
+        }
 
         // RAII
         this.upper = scope;
@@ -366,16 +374,13 @@
         return result;
     };
 
-    Scope.prototype.register = function register(name) {
-
-    };
-
     Scope.prototype.define = function define(node) {
         var name, variable;
         if (node && node.type === Syntax.Identifier) {
             name = node.name;
             if (!this.set.hasOwnProperty(name)) {
-                variable = new Variable(node);
+                variable = new Variable(name);
+                variable.identifiers.push(node);
                 this.set[name] = variable;
                 this.variables.push(variable);
             } else {
