@@ -274,7 +274,8 @@
     }
 
     function Variable(ident) {
-        this.identifier = ident;
+        this.name = ident.name;
+        this.identifiers = [ ident ];
         this.references = [];
     }
 
@@ -305,6 +306,9 @@
     Scope.prototype.close = function close() {
         var i, iz, ref;
 
+        console.log('variables ', this.variables);
+        console.log('references', this.references);
+
         // Because if this is global environment, upper is null
         if (this.upper) {
             for (i = 0, iz = this.left.length; i < iz; ++i) {
@@ -324,15 +328,15 @@
 
     Scope.prototype.resolve = function resolve(ref) {
         // TODO(Constellation) use hashing
-        var i, iz, variable;
-        for (i = 0, iz = this.variables.length; i < iz; ++i) {
-            variable = this.variables[i];
-            if (variable.identifier.name === ref.identifier.name) {
-                variable.references.push(ref);
-                ref.resolved = variable;
-                break;
-            }
+        var i, iz, variable, name;
+        name = ref.identifier.name;
+        if (this.set.hasOwnProperty[name]) {
+            variable = this.set[name];
+            variable.references.push(ref);
+            ref.resolved = variable;
+            return true;
         }
+        return false;
     };
 
     Scope.prototype.delegateLeft = function delegateLeft(ref) {
@@ -364,16 +368,21 @@
     };
 
     Scope.prototype.register = function register(name) {
-        if (!this.set.hasOwnProperty(name)) {
-            this.set[name] = true;
-            this.names.push(name);
-        }
+
     };
 
     Scope.prototype.define = function define(node) {
-        var scope;
+        var name, variable;
         if (node && node.type === Syntax.Identifier) {
-            this.variables.push(new Variable(node));
+            name = node.name;
+            if (!this.set.hasOwnProperty(name)) {
+                variable = new Variable(node);
+                this.set[name] = variable;
+                this.variables.push(variable);
+            } else {
+                variable = this.set[name];
+                variable.identifiers.push(node);
+            }
         }
     };
 
