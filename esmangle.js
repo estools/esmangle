@@ -271,12 +271,14 @@
     function Reference(ident) {
         this.identifier = ident;
         this.resolved = null;
+        this.tainted = false;
     }
 
     function Variable(name) {
         this.name = name;
         this.identifiers = [];
         this.references = [];
+        this.tainted = false;
     }
 
     function Scope(block, opt) {
@@ -294,6 +296,7 @@
         this.through = [];
         this.variables = [];
         this.references = [];
+        this.taints = {};
         this.left = [];
         this.variableScope =
             (this.type === 'global' || this.type === 'function') ? this : scope.variableScope;
@@ -301,6 +304,7 @@
 
         if (this.type === 'function') {
             variable = new Variable('arguments');
+            this.taints['arguments'] = true;
             this.set['arguments'] = variable;
             this.variables.push(variable);
         }
@@ -325,15 +329,22 @@
             }
         } else {
             // this is global / with / function with eval environment
-            set = {};
-            for (i = 0, iz = this.left.length; i < iz; ++i) {
-                // notify all names are through to global
-                ref = this.left[i];
-                current = this;
-                do {
-                    current.through.push(ref);
-                    current = current.upper;
-                } while (current);
+            if (this.type === 'with') {
+                for (i = 0, iz = this.left.length; i < iz; ++i) {
+                    ref = this.left[i];
+                    ref.tainted = true;
+                    this.delegateToUpperScope(ref);
+                }
+            } else {
+                for (i = 0, iz = this.left.length; i < iz; ++i) {
+                    // notify all names are through to global
+                    ref = this.left[i];
+                    current = this;
+                    do {
+                        current.through.push(ref);
+                        current = current.upper;
+                    } while (current);
+                }
             }
         }
         this.left = null;
@@ -347,6 +358,10 @@
         if (this.set.hasOwnProperty(name)) {
             variable = this.set[name];
             variable.references.push(ref);
+            if (ref.tainted) {
+                variable.tainted = true;
+                this.taints[variable.name] = true;
+            }
             ref.resolved = variable;
             return true;
         }
@@ -362,6 +377,9 @@
     Scope.prototype.passAsUnique = function passAsUnique(name) {
         var i, iz;
         if (isKeyword(name)) {
+            return false;
+        }
+        if (this.taints.hasOwnProperty(name)) {
             return false;
         }
         for (i = 0, iz = this.through.length; i < iz; ++i) {
@@ -424,6 +442,10 @@
             for (i = 0, iz = this.variables.length; i < iz; ++i) {
                 variable = this.variables[i];
 
+                if (variable.tainted) {
+                    continue;
+                }
+
                 // Because `arguments` definition is nothing.
                 // But if `var arguments` is defined, identifiers.length !== 0
                 // and this doesn't indicate arguments.
@@ -432,8 +454,6 @@
                     continue;
                 }
 
-                // And because special `arguments` variable should be
-                // variables[0], generateName can produce new not used names.
                 name = this.generateName();
 
                 for (j = 0, jz = variable.identifiers.length; j < jz; ++j) {
