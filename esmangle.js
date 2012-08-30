@@ -42,13 +42,57 @@
 }(function (exports) {
     'use strict';
 
-    var NameSequence,
+    var Syntax,
+        NameSequence,
         ZeroSequenceCache,
         VisitorOption,
         VisitorKeys,
         isArray,
         scopes,
         scope;
+
+    Syntax = {
+        AssignmentExpression: 'AssignmentExpression',
+        ArrayExpression: 'ArrayExpression',
+        BlockStatement: 'BlockStatement',
+        BinaryExpression: 'BinaryExpression',
+        BreakStatement: 'BreakStatement',
+        CallExpression: 'CallExpression',
+        CatchClause: 'CatchClause',
+        ConditionalExpression: 'ConditionalExpression',
+        ContinueStatement: 'ContinueStatement',
+        DoWhileStatement: 'DoWhileStatement',
+        DebuggerStatement: 'DebuggerStatement',
+        EmptyStatement: 'EmptyStatement',
+        ExpressionStatement: 'ExpressionStatement',
+        ForStatement: 'ForStatement',
+        ForInStatement: 'ForInStatement',
+        FunctionDeclaration: 'FunctionDeclaration',
+        FunctionExpression: 'FunctionExpression',
+        Identifier: 'Identifier',
+        IfStatement: 'IfStatement',
+        Literal: 'Literal',
+        LabeledStatement: 'LabeledStatement',
+        LogicalExpression: 'LogicalExpression',
+        MemberExpression: 'MemberExpression',
+        NewExpression: 'NewExpression',
+        ObjectExpression: 'ObjectExpression',
+        Program: 'Program',
+        Property: 'Property',
+        ReturnStatement: 'ReturnStatement',
+        SequenceExpression: 'SequenceExpression',
+        SwitchStatement: 'SwitchStatement',
+        SwitchCase: 'SwitchCase',
+        ThisExpression: 'ThisExpression',
+        ThrowStatement: 'ThrowStatement',
+        TryStatement: 'TryStatement',
+        UnaryExpression: 'UnaryExpression',
+        UpdateExpression: 'UpdateExpression',
+        VariableDeclaration: 'VariableDeclaration',
+        VariableDeclarator: 'VariableDeclarator',
+        WhileStatement: 'WhileStatement',
+        WithStatement: 'WithStatement'
+    };
 
     isArray = Array.isArray;
     if (!isArray) {
@@ -210,6 +254,10 @@
         return 'a' + zeroSequence(name.length);
     }
 
+    function Reference(ident) {
+        this.identifier = ident;
+    }
+
     function Scope(block, opt) {
         this.type =
             (block.type === 'CatchCaluse') ? 'catch' :
@@ -263,6 +311,12 @@
         if (!this.set.hasOwnProperty(name)) {
             this.set[name] = true;
             this.names.push(name);
+        }
+    };
+
+    Scope.prototype.referencing = function referencing(node) {
+        if (node && node.type === Syntax.Identifier) {
+            this.reference.push(new Reference(node));
         }
     };
 
@@ -407,12 +461,180 @@
         // attach scope and collect / resolve names
         traverse(result, {
             enter: function enter(node) {
-                var current;
+                var current, i, iz;
                 if (Scope.isRequired(node)) {
                     current = new Scope(node, {});
                     current.enter();
                 }
+
+                switch (node.type) {
+                case Syntax.AssignmentExpression:
+                    scope.referencing(node.left);
+                    scope.referencing(node.right);
+                    break;
+
+                case Syntax.ArrayExpression:
+                    for (i = 0, iz = node.elements.length; i < iz; ++i) {
+                        scope.referencing(node.elements[i]);
+                    }
+                    break;
+
+                case Syntax.BlockStatement:
+                    break;
+
+                case Syntax.BinaryExpression:
+                    scope.referencing(node.left);
+                    scope.referencing(node.right);
+                    break;
+
+                case Syntax.BreakStatement:
+                    break;
+
+                case Syntax.CallExpression:
+                    scope.referencing(node.callee);
+                    for (i = 0, iz = node['arguments'].length; i < iz; ++i) {
+                        scope.referencing(node['arguments'][i]);
+                    }
+                    break;
+
+                case Syntax.CatchClause:
+                    break;
+
+                case Syntax.ConditionalExpression:
+                    scope.referencing(node.test);
+                    scope.referencing(node.consequent);
+                    scope.referencing(node.alternate);
+                    break;
+
+                case Syntax.ContinueStatement:
+                    break;
+
+                case Syntax.DoWhileStatement:
+                    scope.referencing(node.test);
+                    break;
+
+                case Syntax.DebuggerStatement:
+                    break;
+
+                case Syntax.EmptyStatement:
+                    break;
+
+                case Syntax.ExpressionStatement:
+                    scope.referencing(node.expression);
+                    break;
+
+                case Syntax.ForStatement:
+                    scope.referencing(node.init);
+                    scope.referencing(node.test);
+                    scope.referencing(node.update);
+                    break;
+
+                case Syntax.ForInStatement:
+                    scope.referencing(node.left);
+                    scope.referencing(node.right);
+                    break;
+
+                case Syntax.FunctionDeclaration:
+                    break;
+
+                case Syntax.FunctionExpression:
+                    break;
+
+                case Syntax.Identifier:
+                    break;
+
+                case Syntax.IfStatement:
+                    scope.referencing(node.test);
+                    break;
+
+                case Syntax.Literal:
+                    break;
+
+                case Syntax.LabeledStatement:
+                    break;
+
+                case Syntax.LogicalExpression:
+                    scope.referencing(node.left);
+                    scope.referencing(node.right);
+                    break;
+
+                case Syntax.MemberExpression:
+                    scope.referencing(node.object);
+                    if (node.computed) {
+                        scope.referencing(node.property);
+                    }
+                    break;
+
+                case Syntax.NewExpression:
+                    scope.referencing(node.callee);
+                    for (i = 0, iz = node['arguments'].length; i < iz; ++i) {
+                        scope.referencing(node['arguments'][i]);
+                    }
+                    break;
+
+                case Syntax.ObjectExpression:
+                    break;
+
+                case Syntax.Program:
+                    break;
+
+                case Syntax.Property:
+                    scope.referencing(node.value);
+                    break;
+
+                case Syntax.ReturnStatement:
+                    scope.referencing(node.argument);
+                    break;
+
+                case Syntax.SequenceExpression:
+                    for (i = 0, iz = node.expressions.length; i < iz; ++i) {
+                        scope.referencing(node.expressions[i]);
+                    }
+                    break;
+
+                case Syntax.SwitchStatement:
+                    scope.referencing(node.descriminant);
+                    break;
+
+                case Syntax.SwitchCase:
+                    scope.referencing(node.test);
+                    break;
+
+                case Syntax.ThisExpression:
+                    break;
+
+                case Syntax.ThrowStatement:
+                    scope.referencing(node.argument);
+                    break;
+
+                case Syntax.TryStatement:
+                    break;
+
+                case Syntax.UnaryExpression:
+                    scope.referencing(node.argument);
+                    break;
+
+                case Syntax.UpdateExpression:
+                    scope.referencing(node.argument);
+                    break;
+
+                case Syntax.VariableDeclaration:
+                    break;
+
+                case Syntax.VariableDeclarator:
+                    scope.referencing(node.init);
+                    break;
+
+                case Syntax.WhileStatement:
+                    scope.referencing(node.test);
+                    break;
+
+                case Syntax.WithStatement:
+                    scope.referencing(node.object);
+                    break;
+                }
             },
+
             leave: function leave(node) {
                 if (scope && node === scope.block) {
                     scope.leave();
