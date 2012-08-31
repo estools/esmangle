@@ -3,10 +3,13 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Esmangle by Constellation</title>
+    <title>Esmangle - ECMAScript mangler / minifier for Parser API AST</title>
     <link rel="stylesheet" href="stylesheets/styles.css">
     <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <link rel="stylesheet" href="javascripts/codemirror/codemirror.css">
+    <link rel="stylesheet" href="javascripts/codemirror/ambiance.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.3.3/underscore-min.js"></script>
     <script src="javascripts/respond.js"></script>
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -14,19 +17,22 @@
     <!--[if lt IE 8]>
     <link rel="stylesheet" href="stylesheets/ie.css">
     <![endif]-->
+    <script src="javascripts/codemirror/codemirror.js"></script>
+    <script src="javascripts/codemirror/javascript.js"></script>
+    <script src="javascripts/esprima.js"></script>
+    <script src="javascripts/escodegen.js"></script>
+    <script src="javascripts/esmangle.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-
+    <style type="text/css">
+.CodeMirror pre {
+  border: none;
+  box-shadow: none;
+  -webkit-box-shadow: none;
+  -moz-box-shadow: none;
+}
+    </style>
   </head>
   <body>
-      <div id="header">
-        <nav>
-          <li class="fork"><a href="https://github.com/Constellation/esmangle">View On GitHub</a></li>
-          <li class="downloads"><a href="https://github.com/Constellation/esmangle/zipball/master">ZIP</a></li>
-          <li class="downloads"><a href="https://github.com/Constellation/esmangle/tarball/master">TAR</a></li>
-          <li class="title">DOWNLOADS</li>
-        </nav>
-      </div><!-- end header -->
-
     <div class="wrapper">
 
       <section>
@@ -39,7 +45,8 @@
         </div>
 
         <p>esmangle (<a href="http://github.com/Constellation/esmangle">esmangle</a>) is
-mangler / minifier for <a href="https://developer.mozilla.org/en/SpiderMonkey/Parser_API">Parser API</a> AST.</p>
+mangler / minifier for <a
+href="https://developer.mozilla.org/en/SpiderMonkey/Parser_API">Mozilla Parser API</a> AST.</p>
 
 <h3>Install</h3>
 
@@ -63,8 +70,42 @@ var result = esmangle.mangle(ast);  // gets mangled result
 
 <p>Or you can simply use this <code>esmangle</code> command in the shell.</p>
 
-<pre><code>$ esmangle file.js
+<pre><code>esmangle file.js
 </code></pre>
+
+<h3>Demo</h3>
+<h4>Code</h4>
+<textarea id="code" autofocus="autofocus" cols="50" rows="15"
+spellcheck="false">!(function () {
+    function upperBound(array, func) {
+        var diff, len, i, current;
+
+        len = array.length;
+        i = 0;
+
+        while (len) {
+            diff = len >>> 1;
+            current = i + diff;
+            if (func(array[current])) {
+                len = diff;
+            } else {
+                i = current + 1;
+                len -= diff + 1;
+            }
+        }
+        return i;
+    }
+
+    var index = upperBound(
+        [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37],
+        function(a) {
+            return a > 25;
+        }
+    );
+}());</textarea>
+<h4>Result</h4>
+<textarea id="output" autofocus="autofocus" cols="50" rows="15" spellcheck="false"></textarea>
+
 
 <h3>Note</h3>
 
@@ -99,7 +140,47 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</p>
       </section>
 
     </div>
+<a href="https://github.com/Constellation/esmangle"><img style="position: absolute; top: 0; right:0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
     <!--[if !IE]><script>fixScale(document);</script><![endif]-->
-    
+<script>
+function minify() {
+    var code, tree, mangled, result;
+    code = window.editor.getValue();
+    try {
+        var tree, mangled, actual;
+        tree = esprima.parse(code);
+        mangled = esmangle.mangle(tree);
+        result = escodegen.generate(mangled, {
+            format: {
+                renumber: true,
+                hexadecimal: true,
+                escapeless: true,
+                compact: true,
+                semicolons: false
+            }
+        });
+        window.output.setValue(result);
+    } catch (e) {
+        window.output.setValue('Syntax Error');
+    }
+}
+window.editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+    lineNumbers: true,
+    matchBrackets: true,
+    theme: 'ambiance',
+    indentUnit: 4,
+    lineWrapping: true,
+    onChange: _.debounce(minify)
+});
+window.output = CodeMirror.fromTextArea(document.getElementById("output"), {
+    lineNumbers: true,
+    theme: 'ambiance',
+    readOnly: 'nocursor',
+    indentUnit: 4,
+    lineWrapping: true
+});
+_.defer(minify);
+/* vim: set sw=4 ts=4 et tw=80 : */
+</script>
   </body>
 </html>
