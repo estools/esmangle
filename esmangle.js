@@ -23,7 +23,7 @@
 */
 
 /*jslint bitwise:true */
-/*global esmangle:true, exports:true*/
+/*global esmangle:true, exports:true, define:true*/
 
 (function (factory) {
     'use strict';
@@ -117,7 +117,7 @@
 
     function deepCopy(obj) {
         function deepCopyInernal(obj, result) {
-            var key, val, result;
+            var key, val;
             for (key in obj) {
                 if (obj.hasOwnProperty(key)) {
                     val = obj[key];
