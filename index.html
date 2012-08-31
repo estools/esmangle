@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Esmangle by Constellation</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/respond.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="stylesheets/ie.css">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+      <div id="header">
+        <nav>
+          <li class="fork"><a href="https://github.com/Constellation/esmangle">View On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/Constellation/esmangle/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/Constellation/esmangle/tarball/master">TAR</a></li>
+          <li class="title">DOWNLOADS</li>
+        </nav>
+      </div><!-- end header -->
+
+    <div class="wrapper">
+
+      <section>
+        <div id="title">
+          <h1>Esmangle</h1>
+          <p>esmangle is mangler / minifier for Mozilla Parser API AST</p>
+          <hr>
+          <span class="credits left">Project maintained by <a href="https://github.com/Constellation">Constellation</a></span>
+          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="http://twitter.com/#!/michigangraham">mattgraham</a></span>
+        </div>
+
+        <p>esmangle (<a href="http://github.com/Constellation/esmangle">esmangle</a>) is
+mangler / minifier for <a href="https://developer.mozilla.org/en/SpiderMonkey/Parser_API">Parser API</a> AST.</p>
+
+<h3>Install</h3>
+
+<p>esmangle can be used in a web browser:</p>
+
+<pre><code>&lt;script src="esmangle.js"&gt;&lt;/script&gt;
+</code></pre>
+
+<p>or in a Node.js application via the package manager:</p>
+
+<pre><code>npm install esmangle
+</code></pre>
+
+<h3>Usage</h3>
+
+<p>A simple example: the program</p>
+
+<pre><code>var ast = esprima.parse(code);
+var result = esmangle.mangle(ast);  // gets mangled result
+</code></pre>
+
+<p>Or you can simply use this <code>esmangle</code> command in the shell.</p>
+
+<pre><code>$ esmangle file.js
+</code></pre>
+
+<h3>Note</h3>
+
+<p>This resolution algorithm is based on my bytecode compiler <a href="https://github.com/Constellation/iv/tree/master/iv/lv5/railgun">iv / lv5 / railgun</a>.</p>
+
+<h3>License</h3>
+
+<p>Copyright (C) 2012 <a href="http://github.com/Constellation">Yusuke Suzuki</a>
+ (twitter: <a href="http://twitter.com/Constellation">@Constellation</a>) and other contributors.</p>
+
+<p>Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:</p>
+
+<ul>
+<li><p>Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.</p></li>
+<li><p>Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.</p></li>
+</ul><p>THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL  BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</p>
+
+<p><a href="http://travis-ci.org/Constellation/esmangle"><img src="https://secure.travis-ci.org/Constellation/esmangle.png" alt="Build Status"></a></p>
+      </section>
+
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
