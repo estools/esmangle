@@ -28,6 +28,26 @@ var fs = require('fs'),
     esprima = require('esprima'),
     escodegen = require('escodegen'),
     esmangle = require('../esmangle'),
-    chai = require('chai');
+    chai = require('chai'),
+    expect = chai.expect;
+
+describe('compare mangling result', function () {
+    fs.readdirSync(__dirname + '/compare').sort().forEach(function(file) {
+        var code, expected, p;
+        if (/\.js$/.test(file)) {
+            if (!/expected\.js$/.test(file)) {
+                p = file.replace(/\.js$/, '.expected.js');
+                code = fs.readFileSync(__dirname + '/compare/' + file, 'utf-8');
+                expected = fs.readFileSync(__dirname + '/compare/' + p, 'utf-8').trim();
+                it(p, function () {
+                    var tree, mangled;
+                    tree = esprima.parse(code);
+                    mangled = esmangle.mangle(tree);
+                    expect(escodegen.generate(mangled, { format: { compact: true, semicolons: false } })).to.be.equal(expected);
+                });
+            }
+        }
+    });
+});
 
 /* vim: set sw=4 ts=4 et tw=80 : */
