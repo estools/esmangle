@@ -170,7 +170,7 @@ window.editor = CodeMirror.fromTextArea(document.getElementById("code"), {
     theme: 'ambiance',
     indentUnit: 4,
     lineWrapping: true,
-    onChange: _.debounce(minify)
+    onChange: _.debounce(minify, 100)
 });
 window.output = CodeMirror.fromTextArea(document.getElementById("output"), {
     lineNumbers: true,
