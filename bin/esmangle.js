@@ -41,6 +41,9 @@ files.forEach(function (filename) {
     var content = fs.readFileSync(filename, 'utf-8');
     console.log(escodegen.generate(esmangle.mangle(esprima.parse(content)), {
         format: {
+            renumber: true,
+            hexadecimal: true,
+            escapeless: true,
             compact: true,
             semicolons: false
         }

@@ -40,10 +40,19 @@ describe('compare mangling result', function () {
                 code = fs.readFileSync(__dirname + '/compare/' + file, 'utf-8');
                 expected = fs.readFileSync(__dirname + '/compare/' + p, 'utf-8').trim();
                 it(p, function () {
-                    var tree, mangled;
+                    var tree, mangled, actual;
                     tree = esprima.parse(code);
                     mangled = esmangle.mangle(tree);
-                    expect(escodegen.generate(mangled, { format: { compact: true, semicolons: false } })).to.be.equal(expected);
+                    actual = escodegen.generate(mangled, {
+                        format: {
+                            renumber: true,
+                            hexadecimal: true,
+                            escapeless: true,
+                            compact: true,
+                            semicolons: false
+                        }
+                    });
+                    expect(actual).to.be.equal(expected);
                 });
             }
         }
