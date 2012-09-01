@@ -49,7 +49,8 @@ describe('compare mangling result', function () {
                             hexadecimal: true,
                             escapeless: true,
                             compact: true,
-                            semicolons: false
+                            semicolons: false,
+                            parentheses: false
                         }
                     });
                     expect(actual).to.be.equal(expected);

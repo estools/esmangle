@@ -45,7 +45,8 @@ files.forEach(function (filename) {
             hexadecimal: true,
             escapeless: true,
             compact: true,
-            semicolons: false
+            semicolons: false,
+            parentheses: false
         }
     }));
 });
