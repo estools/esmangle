@@ -28,6 +28,20 @@
 (function (factory, global) {
     'use strict';
 
+    function namespace(str, obj) {
+      var i, iz, names, name;
+      names = str.split('.');
+      for (i = 0, iz = names.length; i < iz; ++i) {
+        name = names[i];
+        if (obj.hasOwnProperty(name)) {
+          obj = obj[name];
+        } else {
+          obj = (obj[name] = {});
+        }
+      }
+      return obj;
+    }
+
     // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
     // and plain browser loading,
     if (typeof define === 'function' && define.amd) {
@@ -35,9 +49,9 @@
     } else if (typeof exports !== 'undefined') {
         factory(exports);
     } else if (typeof window !== 'undefined') {
-        factory((window.esmangle = {}));
+        factory(namespace('esmangle', window));
     } else {
-        factory((global.esmangle = {}));
+        factory(namespace('esmangle', global));
     }
 }(function (exports) {
     'use strict';
@@ -824,5 +838,8 @@
     exports.version = VERSION;
     exports.generateNextName = generateNextName;
     exports.mangle = mangle;
+    if (typeof exports.pass === 'undefined') {
+        exports.pass = {};
+    }
 }, this));
 /* vim: set sw=4 ts=4 et tw=80 : */
