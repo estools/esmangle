@@ -25,7 +25,7 @@
 /*jslint bitwise:true */
 /*global esmangle:true, exports:true, define:true*/
 
-(function (factory) {
+(function (factory, global) {
     'use strict';
 
     // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
@@ -37,7 +37,7 @@
     } else if (typeof window !== 'undefined') {
         factory((window.esmangle = {}));
     } else {
-        factory((Function('return this')().esmangle = {}));
+        factory((global.esmangle = {}));
     }
 }(function (exports) {
     'use strict';
@@ -824,5 +824,5 @@
     exports.version = VERSION;
     exports.generateNextName = generateNextName;
     exports.mangle = mangle;
-}));
+}, this));
 /* vim: set sw=4 ts=4 et tw=80 : */
