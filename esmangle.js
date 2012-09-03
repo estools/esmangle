@@ -29,17 +29,17 @@
     'use strict';
 
     function namespace(str, obj) {
-      var i, iz, names, name;
-      names = str.split('.');
-      for (i = 0, iz = names.length; i < iz; ++i) {
-        name = names[i];
-        if (obj.hasOwnProperty(name)) {
-          obj = obj[name];
-        } else {
-          obj = (obj[name] = {});
+        var i, iz, names, name;
+        names = str.split('.');
+        for (i = 0, iz = names.length; i < iz; ++i) {
+            name = names[i];
+            if (obj.hasOwnProperty(name)) {
+                obj = obj[name];
+            } else {
+                obj = (obj[name] = {});
+            }
         }
-      }
-      return obj;
+        return obj;
     }
 
     // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,

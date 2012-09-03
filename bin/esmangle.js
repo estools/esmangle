@@ -23,7 +23,7 @@
   THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/*jslint sloppy:true node:true */
+/*jslint node:true */
 
 var fs = require('fs'),
     path = require('path'),
@@ -34,9 +34,12 @@ var fs = require('fs'),
     files = process.argv.splice(2);
 
 esmangle = require(path.join(root, 'esmangle'));
-esmangle.pass.removeWastedBlocks = require(path.join(root, 'lib', 'pass', 'remove-wasted-blocks')).removeWastedBlocks;
-esmangle.pass.transformToSequenceExpression = require(path.join(root, 'lib', 'pass', 'transform-to-sequence-expression')).transformToSequenceExpression;
-esmangle.pass.transformBranchToExpression = require(path.join(root, 'lib', 'pass', 'transform-branch-to-expression')).transformBranchToExpression;
+esmangle.optimize = require(path.join(root, 'lib', 'optimize')).optimize;
+passes = [
+    require(path.join(root, 'lib', 'pass', 'remove-wasted-blocks')),
+    require(path.join(root, 'lib', 'pass', 'transform-to-sequence-expression')),
+    require(path.join(root, 'lib', 'pass', 'transform-branch-to-expression'))
+];
 
 if (files.length === 0) {
     console.log('Usage:');
@@ -45,40 +48,13 @@ if (files.length === 0) {
 }
 
 files.forEach(function (filename) {
-    var content, status, set, tree;
+    var content, tree;
     content = fs.readFileSync(filename, 'utf-8');
     tree = esprima.parse(content);
-
-    // optimization
-    do {
-        status = false;
-
-        // transform branch to expression
-        set = esmangle.pass.transformBranchToExpression(tree, {
-            destructive: true
-        });
-        tree = set.result;
-        status = (status || set.modified);
-
-        // transform to sequence expression
-        set = esmangle.pass.transformToSequenceExpression(tree, {
-            destructive: true
-        });
-        tree = set.result;
-        status = (status || set.modified);
-
-        // remove wasted blocks
-        set = esmangle.pass.removeWastedBlocks(tree, {
-            destructive: true
-        });
-        tree = set.result;
-        status = (status || set.modified);
-    } while (status);
-
+    tree = esmangle.optimize(tree, passes);
     tree = esmangle.mangle(tree, {
         destructive: true
     });
-
     console.log(escodegen.generate(tree, {
         format: {
             renumber: true,
