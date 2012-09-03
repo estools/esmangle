@@ -35,7 +35,7 @@ var fs = require('fs'),
     passes;
 
 esmangle = require(path.join(root, 'esmangle'));
-esmangle.optimize = require(path.join(root, 'lib', 'optimize')).optimize;
+esmangle.optimize = require(path.join(root, 'lib', 'optimize'));
 passes = [
     require(path.join(root, 'lib', 'pass', 'remove-wasted-blocks')),
     require(path.join(root, 'lib', 'pass', 'transform-to-sequence-expression')),
@@ -53,7 +53,7 @@ describe('compare mangling result', function () {
                 it(p, function () {
                     var tree, actual;
                     tree = esprima.parse(code);
-                    tree = esmangle.optimize(tree, passes);
+                    tree = esmangle.optimize.optimize(tree, passes);
                     tree = esmangle.mangle(tree, {
                         destructive: true
                     });
