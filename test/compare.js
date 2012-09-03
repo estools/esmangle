@@ -39,7 +39,8 @@ esmangle.optimize = require(path.join(root, 'lib', 'optimize'));
 passes = [
     require(path.join(root, 'lib', 'pass', 'remove-wasted-blocks')),
     require(path.join(root, 'lib', 'pass', 'transform-to-sequence-expression')),
-    require(path.join(root, 'lib', 'pass', 'transform-branch-to-expression'))
+    require(path.join(root, 'lib', 'pass', 'transform-branch-to-expression')),
+    require(path.join(root, 'lib', 'pass', 'reduce-branch-jump'))
 ];
 
 describe('compare mangling result', function () {
