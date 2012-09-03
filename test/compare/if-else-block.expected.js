@@ -1,1 +1,1 @@
-if(cond)stmt; else stmt
+cond?stmt:stmt

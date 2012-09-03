@@ -1,1 +1,1 @@
-if(cond)cond
+cond&&cond

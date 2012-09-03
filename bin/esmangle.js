@@ -36,6 +36,7 @@ var fs = require('fs'),
 esmangle = require(path.join(root, 'esmangle'));
 esmangle.pass.removeWastedBlocks = require(path.join(root, 'lib', 'pass', 'remove-wasted-blocks')).removeWastedBlocks;
 esmangle.pass.transformToSequenceExpression = require(path.join(root, 'lib', 'pass', 'transform-to-sequence-expression')).transformToSequenceExpression;
+esmangle.pass.transformBranchToExpression = require(path.join(root, 'lib', 'pass', 'transform-branch-to-expression')).transformBranchToExpression;
 
 if (files.length === 0) {
     console.log('Usage:');
@@ -51,6 +52,13 @@ files.forEach(function (filename) {
     // optimization
     do {
         status = false;
+
+        // transform branch to expression
+        set = esmangle.pass.transformBranchToExpression(tree, {
+            destructive: true
+        });
+        tree = set.result;
+        status = (status || set.modified);
 
         // transform to sequence expression
         set = esmangle.pass.transformToSequenceExpression(tree, {
