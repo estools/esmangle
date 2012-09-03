@@ -31,15 +31,6 @@ var fs = require('fs'),
     chai = require('chai'),
     expect = chai.expect;
 
-// import remove-wasted-blocks pass
-function registerPass(manager, mod) {
-    var pass;
-    pass = mod[Object.keys(mod)[0]]
-    manager[pass.passName] = pass;
-}
-
-registerPass(esmangle.pass, require('esmangle-pass-remove-wasted-blocks'));
-
 describe('compare mangling result', function () {
     fs.readdirSync(__dirname + '/compare').sort().forEach(function(file) {
         var code, expected, p;
@@ -49,10 +40,9 @@ describe('compare mangling result', function () {
                 code = fs.readFileSync(__dirname + '/compare/' + file, 'utf-8');
                 expected = fs.readFileSync(__dirname + '/compare/' + p, 'utf-8').trim();
                 it(p, function () {
-                    var tree, removed, mangled, actual;
+                    var tree, mangled, actual;
                     tree = esprima.parse(code);
-                    removed = esmangle.pass.removeWastedBlocks(tree);
-                    mangled = esmangle.mangle(removed);
+                    mangled = esmangle.mangle(tree);
                     actual = escodegen.generate(mangled, {
                         format: {
                             renumber: true,

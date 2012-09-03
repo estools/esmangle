@@ -10,6 +10,9 @@
     "engines": {
         "node": ">=0.4.0"
     },
+    "directories": {
+        "lib": "./lib"
+    },
     "maintainers": [{
         "name": "Yusuke Suzuki",
         "email": "utatane.tea@gmail.com",
@@ -21,13 +24,11 @@
     },
     "dependencies": {
         "esprima": ">= 0.9.9",
-        "escodegen": ">= 0.0.6",
-        "esmangle-pass-remove-wasted-blocks": "== 0.0.2"
+        "escodegen": ">= 0.0.6"
     },
     "devDependencies": {
         "esprima": ">= 0.9.9",
         "escodegen": ">= 0.0.6",
-        "esmangle-pass-remove-wasted-blocks": "== 0.0.2",
         "mocha": "*",
         "chai": "*"
     },

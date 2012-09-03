@@ -31,15 +31,6 @@ var fs = require('fs'),
     esmangle = require('esmangle'),
     files = process.argv.splice(2);
 
-// import remove-wasted-blocks pass
-function registerPass(manager, mod) {
-    var pass;
-    pass = mod[Object.keys(mod)[0]]
-    manager[pass.passName] = pass;
-}
-
-registerPass(esmangle.pass, require('esmangle-pass-remove-wasted-blocks'));
-
 if (files.length === 0) {
     console.log('Usage:');
     console.log('   esmangle file.js');
@@ -50,7 +41,6 @@ files.forEach(function (filename) {
     var content, tree;
     content = fs.readFileSync(filename, 'utf-8');
     tree = esprima.parse(content);
-    tree = esmangle.pass.removeWastedBlocks(tree);
     tree = esmangle.mangle(tree);
     console.log(escodegen.generate(tree, {
         format: {
