@@ -1,0 +1,3 @@
+do {
+  stmt;
+} while(cond);
