@@ -26,10 +26,16 @@
 /*jslint sloppy:true node:true */
 
 var fs = require('fs'),
+    path = require('path'),
+    root = path.join(path.dirname(fs.realpathSync(__filename)), '..'),
     esprima = require('esprima'),
     escodegen = require('escodegen'),
-    esmangle = require('esmangle'),
+    esmangle,
     files = process.argv.splice(2);
+
+esmangle = require(path.join(root, 'esmangle'));
+esmangle.pass.removeWastedBlocks = require(path.join(root, 'lib', 'pass', 'remove-wasted-blocks')).removeWastedBlocks;
+esmangle.pass.transformToSequenceExpression = require(path.join(root, 'lib', 'pass', 'transform-to-sequence-expression')).transformToSequenceExpression;
 
 if (files.length === 0) {
     console.log('Usage:');
@@ -38,10 +44,26 @@ if (files.length === 0) {
 }
 
 files.forEach(function (filename) {
-    var content, tree;
+    var content, status, set, tree;
     content = fs.readFileSync(filename, 'utf-8');
     tree = esprima.parse(content);
     tree = esmangle.mangle(tree);
+
+    // optimization
+    do {
+        status = false;
+
+        // transform to sequence expression
+        set = esmangle.pass.transformToSequenceExpression(tree);
+        tree = set.result;
+        status = (status || set.modified);
+
+        // remove wasted blocks
+        set = esmangle.pass.removeWastedBlocks(tree);
+        tree = set.result;
+        status = (status || set.modified);
+    } while (status);
+
     console.log(escodegen.generate(tree, {
         format: {
             renumber: true,

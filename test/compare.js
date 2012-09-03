@@ -25,11 +25,17 @@
 /*jslint node:true */
 
 var fs = require('fs'),
+    path = require('path'),
+    root = path.join(path.dirname(fs.realpathSync(__filename)), '..'),
     esprima = require('esprima'),
     escodegen = require('escodegen'),
-    esmangle = require('../esmangle'),
+    esmangle,
     chai = require('chai'),
     expect = chai.expect;
+
+esmangle = require(path.join(root, 'esmangle'));
+esmangle.pass.removeWastedBlocks = require(path.join(root, 'lib', 'pass', 'remove-wasted-blocks')).removeWastedBlocks;
+esmangle.pass.transformToSequenceExpression = require(path.join(root, 'lib', 'pass', 'transform-to-sequence-expression')).transformToSequenceExpression;
 
 describe('compare mangling result', function () {
     fs.readdirSync(__dirname + '/compare').sort().forEach(function(file) {
@@ -40,10 +46,26 @@ describe('compare mangling result', function () {
                 code = fs.readFileSync(__dirname + '/compare/' + file, 'utf-8');
                 expected = fs.readFileSync(__dirname + '/compare/' + p, 'utf-8').trim();
                 it(p, function () {
-                    var tree, mangled, actual;
+                    var tree, status, set, actual;
                     tree = esprima.parse(code);
-                    mangled = esmangle.mangle(tree);
-                    actual = escodegen.generate(mangled, {
+
+                    // optimization
+                    do {
+                        status = false;
+
+                        // transform to sequence expression
+                        set = esmangle.pass.transformToSequenceExpression(tree);
+                        tree = set.result;
+                        status = (status || set.modified);
+
+                        // remove wasted blocks
+                        set = esmangle.pass.removeWastedBlocks(tree);
+                        tree = set.result;
+                        status = (status || set.modified);
+                    } while (status);
+
+                    tree = esmangle.mangle(tree);
+                    actual = escodegen.generate(tree, {
                         format: {
                             renumber: true,
                             hexadecimal: true,

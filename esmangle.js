@@ -45,11 +45,9 @@
     // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
     // and plain browser loading,
     if (typeof define === 'function' && define.amd) {
-        define(['exports'], factory);
+        define('esmangle', ['exports'], factory);
     } else if (typeof exports !== 'undefined') {
         factory(exports);
-    } else if (typeof window !== 'undefined') {
-        factory(namespace('esmangle', window));
     } else {
         factory(namespace('esmangle', global));
     }
