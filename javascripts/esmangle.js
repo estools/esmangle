@@ -25,19 +25,31 @@
 /*jslint bitwise:true */
 /*global esmangle:true, exports:true, define:true*/
 
-(function (factory) {
+(function (factory, global) {
     'use strict';
+
+    function namespace(str, obj) {
+      var i, iz, names, name;
+      names = str.split('.');
+      for (i = 0, iz = names.length; i < iz; ++i) {
+        name = names[i];
+        if (obj.hasOwnProperty(name)) {
+          obj = obj[name];
+        } else {
+          obj = (obj[name] = {});
+        }
+      }
+      return obj;
+    }
 
     // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
     // and plain browser loading,
     if (typeof define === 'function' && define.amd) {
-        define(['exports'], factory);
+        define('esmangle', ['exports'], factory);
     } else if (typeof exports !== 'undefined') {
         factory(exports);
-    } else if (typeof window !== 'undefined') {
-        factory((window.esmangle = {}));
     } else {
-        factory((Function('return this')().esmangle = {}));
+        factory(namespace('esmangle', global));
     }
 }(function (exports) {
     'use strict';
@@ -607,10 +619,18 @@
     function mangle(tree, options) {
         var result, i, len;
 
+        if (options == null) {
+            options = { destructive: false };
+        }
+
+        if (options.destructive) {
+            result = tree;
+        } else {
+            result = deepCopy(tree);
+        }
+
         scopes = [];
         scope = null;
-
-        result = deepCopy(tree);
 
         // attach scope and collect / resolve names
         traverse(result, {
@@ -824,5 +844,8 @@
     exports.version = VERSION;
     exports.generateNextName = generateNextName;
     exports.mangle = mangle;
-}));
+    if (typeof exports.pass === 'undefined') {
+        exports.pass = {};
+    }
+}, this));
 /* vim: set sw=4 ts=4 et tw=80 : */

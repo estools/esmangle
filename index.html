@@ -22,6 +22,9 @@
     <script src="javascripts/esprima.js"></script>
     <script src="javascripts/escodegen.js"></script>
     <script src="javascripts/esmangle.js"></script>
+    <script src="javascripts/esmangle/common.js"></script>
+    <script src="javascripts/esmangle/pass/remove-wasted-blocks.js"></script>
+    <script src="javascripts/esmangle/pass/transform-to-sequence-expression.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <style type="text/css">
 .CodeMirror pre {
@@ -144,13 +147,35 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</p>
     <!--[if !IE]><script>fixScale(document);</script><![endif]-->
 <script>
 function minify() {
-    var code, tree, mangled, result;
+    var code, tree, status, set, result;
     code = window.editor.getValue();
     try {
-        var tree, mangled, actual;
         tree = esprima.parse(code);
-        mangled = esmangle.mangle(tree);
-        result = escodegen.generate(mangled, {
+
+        // optimization
+        do {
+            status = false;
+
+            // transform to sequence expression
+            set = esmangle.pass.transformToSequenceExpression(tree, {
+                destructive: true
+            });
+            tree = set.result;
+            status = (status || set.modified);
+
+            // remove wasted blocks
+            set = esmangle.pass.removeWastedBlocks(tree, {
+                destructive: true
+            });
+            tree = set.result;
+            status = (status || set.modified);
+        } while (status);
+
+        tree = esmangle.mangle(tree, {
+            destructive: true
+        });
+
+        result = escodegen.generate(tree, {
             format: {
                 renumber: true,
                 hexadecimal: true,
