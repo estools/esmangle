@@ -21,11 +21,13 @@
     },
     "dependencies": {
         "esprima": ">= 0.9.9",
-        "escodegen": ">= 0.0.6"
+        "escodegen": ">= 0.0.6",
+        "esmangle-pass-remove-wasted-blocks": "== 0.0.2"
     },
     "devDependencies": {
         "esprima": ">= 0.9.9",
         "escodegen": ">= 0.0.6",
+        "esmangle-pass-remove-wasted-blocks": "== 0.0.2",
         "mocha": "*",
         "chai": "*"
     },
