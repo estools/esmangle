@@ -54,17 +54,23 @@ describe('compare mangling result', function () {
                         status = false;
 
                         // transform to sequence expression
-                        set = esmangle.pass.transformToSequenceExpression(tree);
+                        set = esmangle.pass.transformToSequenceExpression(tree, {
+                            destructive: true
+                        });
                         tree = set.result;
                         status = (status || set.modified);
 
                         // remove wasted blocks
-                        set = esmangle.pass.removeWastedBlocks(tree);
+                        set = esmangle.pass.removeWastedBlocks(tree, {
+                            destructive: true
+                        });
                         tree = set.result;
                         status = (status || set.modified);
                     } while (status);
 
-                    tree = esmangle.mangle(tree);
+                    tree = esmangle.mangle(tree, {
+                        destructive: true
+                    });
                     actual = escodegen.generate(tree, {
                         format: {
                             renumber: true,

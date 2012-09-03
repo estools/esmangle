@@ -619,10 +619,18 @@
     function mangle(tree, options) {
         var result, i, len;
 
+        if (options == null) {
+            options = { destructive: false };
+        }
+
+        if (options.destructive) {
+            result = tree;
+        } else {
+            result = deepCopy(tree);
+        }
+
         scopes = [];
         scope = null;
-
-        result = deepCopy(tree);
 
         // attach scope and collect / resolve names
         traverse(result, {

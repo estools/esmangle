@@ -47,22 +47,29 @@ files.forEach(function (filename) {
     var content, status, set, tree;
     content = fs.readFileSync(filename, 'utf-8');
     tree = esprima.parse(content);
-    tree = esmangle.mangle(tree);
 
     // optimization
     do {
         status = false;
 
         // transform to sequence expression
-        set = esmangle.pass.transformToSequenceExpression(tree);
+        set = esmangle.pass.transformToSequenceExpression(tree, {
+            destructive: true
+        });
         tree = set.result;
         status = (status || set.modified);
 
         // remove wasted blocks
-        set = esmangle.pass.removeWastedBlocks(tree);
+        set = esmangle.pass.removeWastedBlocks(tree, {
+            destructive: true
+        });
         tree = set.result;
         status = (status || set.modified);
     } while (status);
+
+    tree = esmangle.mangle(tree, {
+        destructive: true
+    });
 
     console.log(escodegen.generate(tree, {
         format: {
