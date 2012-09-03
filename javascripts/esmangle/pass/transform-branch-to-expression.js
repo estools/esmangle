@@ -27,8 +27,6 @@
 (function (factory, global) {
     'use strict';
 
-    var ex;
-
     function namespace(str, obj) {
         var i, iz, names, name;
         names = str.split('.');
@@ -46,7 +44,7 @@
     // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
     // and plain browser loading,
     if (typeof define === 'function' && define.amd) {
-        define('esmangle/pass/remove-wasted-blocks', ['exports', 'esmangle/common'], factory);
+        define('esmangle/pass/transform-branch-to-expression', ['exports', 'esmangle/common'], factory);
     } else if (typeof exports !== 'undefined') {
         factory(exports, require('../common'));
     } else {
@@ -61,41 +59,72 @@
     traverse = common.traverse;
     deepCopy = common.deepCopy;
 
-    function trailingIf(node) {
-        switch (node.type) {
-        case Syntax.IfStatement:
-            if (!node.alternate) {
-                return true;
+    function transform(node) {
+        if (node.type === Syntax.IfStatement) {
+            if (node.alternate) {
+                if (node.consequent.type === Syntax.ExpressionStatement && node.alternate.type === Syntax.ExpressionStatement) {
+                    // ok, we can reconstruct this to ConditionalExpression
+                    modified = true;
+                    return {
+                        type: Syntax.ExpressionStatement,
+                        expression: {
+                            type: Syntax.ConditionalExpression,
+                            test: node.test,
+                            consequent: node.consequent.expression,
+                            alternate: node.alternate.expression
+                        }
+                    };
+                }
+                if (node.consequent.type === Syntax.ReturnStatement && node.consequent.argument !== null && node.alternate.type === Syntax.ReturnStatement && node.alternate.argument !== null) {
+                    // pattern:
+                    //   if (cond) return a;
+                    //   else return b;
+                    modified = true;
+                    return {
+                        type: Syntax.ReturnStatement,
+                        argument: {
+                            type: Syntax.ConditionalExpression,
+                            test: node.test,
+                            consequent: node.consequent.argument,
+                            alternate: node.alternate.argument
+                        }
+                    };
+                }
+                if (node.consequent.type === Syntax.ThrowStatement && node.alternate.type === Syntax.ThrowStatement) {
+                    // pattern:
+                    //   if (cond) throw a;
+                    //   else throw b;
+                    modified = true;
+                    return {
+                        type: Syntax.ThrowStatement,
+                        argument: {
+                            type: Syntax.ConditionalExpression,
+                            test: node.test,
+                            consequent: node.consequent.argument,
+                            alternate: node.alternate.argument
+                        }
+                    };
+                }
+            } else {
+                if (node.consequent.type === Syntax.ExpressionStatement) {
+                    // ok, we can reconstruct this to LogicalExpression
+                    modified = true;
+                    return {
+                        type: Syntax.ExpressionStatement,
+                        expression: {
+                            type: Syntax.LogicalExpression,
+                            operator: '&&',
+                            left: node.test,
+                            right: node.consequent.expression
+                        }
+                    };
+                }
             }
-            return trailingIf(node.alternate);
-
-        case Syntax.LabeledStatement:
-        case Syntax.ForStatement:
-        case Syntax.ForInStatement:
-        case Syntax.WhileStatement:
-        case Syntax.WithStatement:
-            return trailingIf(node.body);
-        }
-        return false;
-    }
-
-    function remove(node) {
-        while (node.type === Syntax.BlockStatement && node.body.length === 1) {
-            modified = true;
-            node = node.body[0];
         }
         return node;
     }
 
-    function removeNotIfStatementTrailing(node) {
-        while (node.type === Syntax.BlockStatement && node.body.length === 1 && !trailingIf(node.body[0])) {
-            modified = true;
-            node = node.body[0];
-        }
-        return node;
-    }
-
-    function removeWastedBlocks(tree, options) {
+    function transformBranchToExpression(tree, options) {
         var result;
 
         if (options == null) {
@@ -111,28 +140,26 @@
         modified = false;
 
         traverse(result, {
-            enter: function enter(node) {
+            leave: function leave(node) {
                 var i, iz;
                 switch (node.type) {
                 case Syntax.BlockStatement:
                 case Syntax.Program:
                     for (i = 0, iz = node.body.length; i < iz; ++i) {
-                        node.body[i] = remove(node.body[i]);
+                        node.body[i] = transform(node.body[i]);
                     }
                     break;
 
                 case Syntax.SwitchCase:
                     for (i = 0, iz = node.consequent.length; i < iz; ++i) {
-                        node.consequent[i] = remove(node.consequent[i]);
+                        node.consequent[i] = transform(node.consequent[i]);
                     }
                     break;
 
                 case Syntax.IfStatement:
+                    node.consequent = transform(node.consequent);
                     if (node.alternate) {
-                        node.consequent = removeNotIfStatementTrailing(node.consequent);
-                        node.alternate = remove(node.alternate);
-                    } else {
-                        node.consequent = remove(node.consequent);
+                        node.alternate = transform(node.alternate);
                     }
                     break;
 
@@ -142,7 +169,7 @@
                 case Syntax.ForInStatement:
                 case Syntax.WhileStatement:
                 case Syntax.WithStatement:
-                    node.body = remove(node.body);
+                    node.body = transform(node.body);
                     break;
                 }
             }
@@ -154,7 +181,7 @@
         };
     }
 
-    removeWastedBlocks.passName = 'removeWastedBlocks';
-    exports.removeWastedBlocks = removeWastedBlocks;
+    transformBranchToExpression.passName = 'transformBranchToExpression';
+    exports.transformBranchToExpression = transformBranchToExpression;
 }, this));
 /* vim: set sw=4 ts=4 et tw=80 : */

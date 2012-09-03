@@ -44,7 +44,7 @@
     // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
     // and plain browser loading,
     if (typeof define === 'function' && define.amd) {
-        define('esmangle/pass/transform-to-sequence-expression', ['exports', 'esmangle/common'], factory);
+        define('esmangle/pass/reduce-branch-jump', ['exports', 'esmangle/common'], factory);
     } else if (typeof exports !== 'undefined') {
         factory(exports, require('../common'));
     } else {
@@ -59,71 +59,38 @@
     traverse = common.traverse;
     deepCopy = common.deepCopy;
 
-    function transform(node) {
-        var i, iz, expressions, stmt, body;
-
-        function constructSeq(expressions, type) {
-            var seq;
-
-            if (expressions.length === 1) {
-                if (type === Syntax.ExpressionStatement) {
-                    return {
-                        type: type,
-                        expression: expressions[0]
+    function reduce(ary, index) {
+        var node, sibling;
+        node = ary[index];
+        sibling = ary[index + 1];
+        if (node.type === Syntax.IfStatement) {
+            if (!node.alternate) {
+                if (node.consequent.type === Syntax.ReturnStatement && node.consequent.argument !== null &&
+                    sibling.type === Syntax.ReturnStatement && sibling.argument !== null) {
+                    // pattern:
+                    //     if (cond) return v;
+                    //     return v2;
+                    ary.splice(index, 1);
+                    ary[index] = {
+                        type: Syntax.ReturnStatement,
+                        argument: {
+                            type: Syntax.ExpressionStatement,
+                            expression: {
+                                type: Syntax.ConditionalExpression,
+                                test: node.test,
+                                consequent: node.consequent.argument,
+                                alternate: sibling.argument
+                            }
+                        }
                     };
+                    return true;
                 }
-                return {
-                    type: type,
-                    argument: expressions[0]
-                };
-            } else {
-                modified = true;
-                seq = {
-                    type: Syntax.SequenceExpression,
-                    expressions: expressions
-                };
-
-                if (type === Syntax.ExpressionStatement) {
-                    return {
-                        type: type,
-                        expression: seq
-                    };
-                }
-                return {
-                    type: type,
-                    argument: seq
-                };
             }
         }
-
-        body = [];
-        expressions = [];
-
-        for (i = 0, iz = node.body.length; i < iz; ++i) {
-            stmt = node.body[i];
-            if (stmt.type === Syntax.ExpressionStatement) {
-                expressions.push(stmt.expression);
-            } else if ((stmt.type === Syntax.ReturnStatement && stmt.argument !== null) || stmt.type === Syntax.ThrowStatement) {
-                expressions.push(stmt.argument);
-                body.push(constructSeq(expressions, stmt.type));
-                expressions = [];
-            } else {
-                if (expressions.length) {
-                    body.push(constructSeq(expressions, Syntax.ExpressionStatement));
-                    expressions = [];
-                }
-                body.push(stmt);
-            }
-        }
-
-        if (expressions.length) {
-            body.push(constructSeq(expressions, Syntax.ExpressionStatement));
-        }
-
-        node.body = body;
+        return false;
     }
 
-    function transformToSequenceExpression(tree, options) {
+    function reduceBranchJump(tree, options) {
         var result;
 
         if (options == null) {
@@ -137,15 +104,29 @@
         }
 
         modified = false;
+
         traverse(result, {
-            enter: function enter(node) {
-                var i, iz;
+            leave: function leave(node) {
+                var i;
                 switch (node.type) {
                 case Syntax.BlockStatement:
                 case Syntax.Program:
-                    transform(node);
+                    i = 0;
+                    while (i < (node.body.length - 1)) {
+                        if (!reduce(node.body, i)) {
+                            ++i;
+                        }
+                    }
                     break;
-                }
+
+                case Syntax.SwitchCase:
+                    i = 0;
+                    while (i < (node.consequent.length - 1)) {
+                        if (!reduce(node.consequent, i)) {
+                            ++i;
+                        }
+                    }
+                    break;
             }
         });
 
@@ -155,7 +136,7 @@
         };
     }
 
-    transformToSequenceExpression.passName = 'transformToSequenceExpression';
-    exports.transformToSequenceExpression = transformToSequenceExpression;
+    reduceBranchJump.passName = 'reduceBranchJump';
+    exports.reduceBranchJump = reduceBranchJump;
 }, this));
 /* vim: set sw=4 ts=4 et tw=80 : */
