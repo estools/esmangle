@@ -34,7 +34,6 @@ var fs = require('fs'),
     files = process.argv.splice(2);
 
 esmangle = require(path.join(root, 'esmangle'));
-esmangle.optimize = require(path.join(root, 'lib', 'optimize'));
 passes = [
     esmangle.require('lib/pass/remove-unused-label'),
     esmangle.require('lib/pass/remove-empty-statement'),

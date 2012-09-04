@@ -841,13 +841,69 @@
         return result;
     }
 
+    function optimize(tree, p) {
+        var i, iz, pass, res, changed, statuses, passes;
+
+        function addPass(pass) {
+            var name;
+            if (typeof pass !== 'function') {
+                // automatic lookup pass (esmangle pass format)
+                name = Object.keys(pass)[0];
+                pass = pass[name];
+            }
+            if (pass.hasOwnProperty('passName')) {
+                name = pass.passName;
+            } else {
+                name = pass.name;
+            }
+            passes.push(pass);
+            statuses.push(true);
+        }
+
+        function fillStatuses(bool) {
+            var i, iz;
+            for (i = 0, iz = statuses.length; i < iz; ++i) {
+                statuses[i] = bool;
+            }
+        }
+
+        statuses = [];
+        passes = [];
+
+
+        for (i = 0, iz = p.length; i < iz; ++i) {
+            addPass(p[i]);
+        }
+
+        do {
+            changed = false;
+            for (i = 0, iz = passes.length; i < iz; ++i) {
+                pass = passes[i];
+                if (statuses[i]) {
+                    res = pass(tree, { destructive: false });
+                    if (res.modified) {
+                        changed = true;
+                        fillStatuses(true);
+                    } else {
+                        statuses[i] = false;
+                    }
+                    tree = res.result;
+                }
+            }
+        } while (changed);
+        return tree;
+    }
+
     exports.version = VERSION;
     exports.generateNextName = generateNextName;
     exports.mangle = mangle;
+    exports.optimize = optimize;
+
     if (typeof exports.pass === 'undefined') {
         exports.pass = {};
     }
-    if (typeof module !== 'undefined') {
+
+    if (typeof process !== 'undefined') {
         // for node.js environment
         exports.require = (function () {
             var fs = require('fs'),
