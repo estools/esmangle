@@ -54,7 +54,7 @@ describe('compare mangling result', function () {
                 it(p, function () {
                     var tree, actual;
                     tree = esprima.parse(code);
-                    tree = esmangle.optimize.optimize(tree, passes);
+                    tree = esmangle.optimize(tree, passes);
                     tree = esmangle.mangle(tree, {
                         destructive: true
                     });

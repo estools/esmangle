@@ -52,7 +52,7 @@ files.forEach(function (filename) {
     var content, tree;
     content = fs.readFileSync(filename, 'utf-8');
     tree = esprima.parse(content);
-    tree = esmangle.optimize.optimize(tree, passes);
+    tree = esmangle.optimize(tree, passes);
     tree = esmangle.mangle(tree, {
         destructive: true
     });
