@@ -1,1 +1,1 @@
-label:test
+test

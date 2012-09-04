@@ -36,6 +36,7 @@ var fs = require('fs'),
 esmangle = require(path.join(root, 'esmangle'));
 esmangle.optimize = require(path.join(root, 'lib', 'optimize'));
 passes = [
+    require(path.join(root, 'lib', 'pass', 'remove-unused-label')),
     require(path.join(root, 'lib', 'pass', 'remove-wasted-blocks')),
     require(path.join(root, 'lib', 'pass', 'transform-to-sequence-expression')),
     require(path.join(root, 'lib', 'pass', 'transform-branch-to-expression')),
