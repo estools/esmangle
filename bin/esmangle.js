@@ -31,7 +31,9 @@ var fs = require('fs'),
     esprima = require('esprima'),
     escodegen = require('escodegen'),
     esmangle,
-    files = process.argv.splice(2);
+    files = process.argv.splice(2),
+    post,
+    passes;
 
 esmangle = require(path.join(root, 'esmangle'));
 passes = [
@@ -42,6 +44,11 @@ passes = [
     esmangle.require('lib/pass/transform-to-sequence-expression'),
     esmangle.require('lib/pass/transform-branch-to-expression'),
     esmangle.require('lib/pass/reduce-branch-jump')
+];
+
+post = [
+    esmangle.require('lib/post/rewrite-boolean'),
+    esmangle.require('lib/post/rewrite-conditional-expression')
 ];
 
 if (files.length === 0) {
@@ -57,7 +64,9 @@ files.forEach(function (filename) {
     tree = esmangle.optimize(tree, passes, {
         destructive: true
     });
-    tree = esmangle.require('lib/post/rewrite-boolean')(tree);
+    tree = post.reduce(function (tree, p) {
+        return p(tree);
+    }, tree);
     tree = esmangle.mangle(tree, {
         destructive: true
     });

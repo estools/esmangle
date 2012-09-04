@@ -32,7 +32,8 @@ var fs = require('fs'),
     esmangle,
     chai = require('chai'),
     expect = chai.expect,
-    passes;
+    passes,
+    post;
 
 esmangle = require(path.join(root, 'esmangle'));
 passes = [
@@ -43,6 +44,11 @@ passes = [
     esmangle.require('lib/pass/transform-to-sequence-expression'),
     esmangle.require('lib/pass/transform-branch-to-expression'),
     esmangle.require('lib/pass/reduce-branch-jump')
+];
+
+post = [
+    esmangle.require('lib/post/rewrite-boolean'),
+    esmangle.require('lib/post/rewrite-conditional-expression')
 ];
 
 describe('compare mangling result', function () {
@@ -57,7 +63,9 @@ describe('compare mangling result', function () {
                     var tree, actual;
                     tree = esprima.parse(code);
                     tree = esmangle.optimize(tree, passes);
-                    tree = esmangle.require('lib/post/rewrite-boolean')(tree);
+                    tree = post.reduce(function (tree, p) {
+                        return p(tree);
+                    }, tree);
                     tree = esmangle.mangle(tree, {
                         destructive: true
                     });
