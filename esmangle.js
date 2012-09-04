@@ -301,7 +301,7 @@
         var variable;
 
         this.type =
-            (block.type === 'CatchCaluse') ? 'catch' :
+            (block.type === 'CatchClause') ? 'catch' :
             (block.type === 'WithStatement') ? 'with' :
             (block.type === 'Program') ? 'global' : 'function';
         this.set = {};
@@ -507,7 +507,7 @@
     };
 
     Scope.isRequired = function isRequired(node) {
-        return node.type === 'Program' || node.type === 'FunctionExpression' || node.type === 'FunctionDeclaration' || node.type === 'WithStatement' || node.type === 'CatchCaluse';
+        return node.type === 'Program' || node.type === 'FunctionExpression' || node.type === 'FunctionDeclaration' || node.type === 'WithStatement' || node.type === 'CatchClause';
     };
 
     // simple visitor implementation
