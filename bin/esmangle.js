@@ -34,7 +34,6 @@ var fs = require('fs'),
     files = process.argv.splice(2);
 
 esmangle = require(path.join(root, 'esmangle'));
-esmangle.optimize = require(path.join(root, 'lib', 'optimize'));
 passes = [
     esmangle.require('lib/pass/remove-unused-label'),
     esmangle.require('lib/pass/remove-empty-statement'),
@@ -54,7 +53,9 @@ files.forEach(function (filename) {
     var content, tree;
     content = fs.readFileSync(filename, 'utf-8');
     tree = esprima.parse(content);
-    tree = esmangle.optimize(tree, passes);
+    tree = esmangle.optimize(tree, passes, {
+        destructive: true
+    });
     tree = esmangle.mangle(tree, {
         destructive: true
     });
