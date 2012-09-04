@@ -57,6 +57,7 @@ describe('compare mangling result', function () {
                     var tree, actual;
                     tree = esprima.parse(code);
                     tree = esmangle.optimize(tree, passes);
+                    tree = esmangle.require('lib/post/rewrite-boolean')(tree);
                     tree = esmangle.mangle(tree, {
                         destructive: true
                     });

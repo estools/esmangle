@@ -57,6 +57,7 @@ files.forEach(function (filename) {
     tree = esmangle.optimize(tree, passes, {
         destructive: true
     });
+    tree = esmangle.require('lib/post/rewrite-boolean')(tree);
     tree = esmangle.mangle(tree, {
         destructive: true
     });
