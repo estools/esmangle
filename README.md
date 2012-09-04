@@ -18,11 +18,42 @@ or in a Node.js application via the package manager:
 A simple example: the program
 
     var ast = esprima.parse(code);
-    var result = esmangle.mangle(ast);  // gets mangled result
+    var result = esmangle.mangle(ast);  // gets mangled AST
+    console.log(escodegen.generate(result));  // dump AST
 
 Or you can simply use this `esmangle` command in the shell.
 
     $ esmangle file.js
+
+Get more compressed result: (in Node.js)
+
+    var ast = esprima.parse(code);
+    // You can add your original pass
+    // See lib/pass/*.js for pass function format
+    var passes = [
+      // remove unused label
+      esmangle.require('lib/pass/remove-unused-label'),
+
+      // remove empty statement
+      esmangle.require('lib/pass/remove-empty-statement'),
+
+      // remove wasted blocks
+      esmangle.require('lib/pass/remove-wasted-blocks'),
+
+      // transform to sequence expression
+      esmangle.require('lib/pass/transform-to-sequence-expression'),
+
+      // transform branch to expression
+      esmangle.require('lib/pass/transform-branch-to-expression'),
+
+      // reduce branch jump
+      esmangle.require('lib/pass/reduce-branch-jump')
+    ];
+
+    // Get optimized AST
+    var optimized = esmangle.optimize(ast, passes);
+    var result = esmangle.mangle(optimized);  // gets mangled AST
+    console.log(escodegen.generate(result));  // dump AST
 
 ### Note
 
