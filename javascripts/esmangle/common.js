@@ -111,7 +111,7 @@
     }
 
     function deepCopy(obj) {
-        function deepCopyInernal(obj, result) {
+        function deepCopyInternal(obj, result) {
             var key, val;
             for (key in obj) {
                 if (obj.hasOwnProperty(key)) {
@@ -120,7 +120,7 @@
                         if (val instanceof RegExp) {
                             val = new RegExp(val);
                         } else {
-                            val = deepCopyInernal(val, isArray(val) ? [] : {});
+                            val = deepCopyInternal(val, isArray(val) ? [] : {});
                         }
                     }
                     result[key] = val;
@@ -128,7 +128,7 @@
             }
             return result;
         }
-        return deepCopyInernal(obj, isArray(obj) ? [] : {});
+        return deepCopyInternal(obj, isArray(obj) ? [] : {});
     }
 
     // removable traverse function
@@ -237,10 +237,17 @@
         }
     }
 
+    function assert(cond, text) {
+        if (!cond) {
+            throw new Error(text);
+        }
+    }
+
     exports.deepCopy = deepCopy;
     exports.isArray = isArray;
     exports.Syntax = Syntax;
     exports.traverse = traverse;
     exports.VisitorKeys = VisitorKeys;
+    exports.assert = assert;
 }, this));
 /* vim: set sw=4 ts=4 et tw=80 : */

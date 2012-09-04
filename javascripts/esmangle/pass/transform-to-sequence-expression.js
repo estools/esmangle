@@ -23,7 +23,7 @@
 */
 
 /*jslint bitwise:true */
-/*global esmangle:true, exports:true, define:true, require:true*/
+/*global esmangle:true, module:true, define:true, require:true*/
 (function (factory, global) {
     'use strict';
 
@@ -44,13 +44,15 @@
     // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
     // and plain browser loading,
     if (typeof define === 'function' && define.amd) {
-        define('esmangle/pass/transform-to-sequence-expression', ['exports', 'esmangle/common'], factory);
-    } else if (typeof exports !== 'undefined') {
-        factory(exports, require('../common'));
+        define('esmangle/pass/transform-to-sequence-expression', ['module', 'esmangle/common'], function(module, common) {
+            module.exports = factory(common);
+        });
+    } else if (typeof module !== 'undefined') {
+        module.exports = factory(require('../common'));
     } else {
-        factory(namespace('esmangle.pass', global), namespace('esmangle.common', global));
+        namespace('esmangle.pass', global).transformToSequenceExpression = factory(namespace('esmangle.common', global));
     }
-}(function (exports, common) {
+}(function (common) {
     'use strict';
 
     var Syntax, traverse, deepCopy, modified;
@@ -156,6 +158,6 @@
     }
 
     transformToSequenceExpression.passName = 'transformToSequenceExpression';
-    exports.transformToSequenceExpression = transformToSequenceExpression;
+    return transformToSequenceExpression;
 }, this));
 /* vim: set sw=4 ts=4 et tw=80 : */

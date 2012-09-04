@@ -23,9 +23,11 @@
 */
 
 /*jslint bitwise:true */
-/*global esmangle:true, exports:true, define:true*/
+/*global esmangle:true, module:true, define:true, require:true*/
 (function (factory, global) {
     'use strict';
+
+    var ex;
 
     function namespace(str, obj) {
         var i, iz, names, name;
@@ -44,74 +46,75 @@
     // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
     // and plain browser loading,
     if (typeof define === 'function' && define.amd) {
-        define('esmangle/optimize', ['exports'], factory);
-    } else if (typeof exports !== 'undefined') {
-        factory(exports);
+        define('esmangle/pass/remove-empty-statement', ['module', 'esmangle/common'], function(module, common) {
+            module.exports = factory(common);
+        });
+    } else if (typeof module !== 'undefined') {
+        module.exports = factory(require('../common'));
     } else {
-        factory(namespace('esmangle.optimize', global));
+        namespace('esmangle.pass', global).removeEmptyStatement = factory(namespace('esmangle.common', global));
     }
-}(function (exports) {
+}(function (common) {
     'use strict';
 
-    var statuses, passes;
+    var Syntax, traverse, deepCopy, assert, scope, modified;
 
-    function addPass(pass) {
-        var name;
-        if (typeof pass !== 'function') {
-            // automatic lookup pass (esmangle pass format)
-            name = Object.keys(pass)[0];
-            pass = pass[name];
+    Syntax = common.Syntax;
+    traverse = common.traverse;
+    deepCopy = common.deepCopy;
+
+    function remove(array) {
+        var i, iz, node, result;
+        result = [];
+        for (i = 0, iz = array.length; i < iz; ++i) {
+            node = array[i];
+            if (node.type === Syntax.EmptyStatement) {
+                modified = true;
+            } else {
+                result.push(array[i]);
+            }
         }
-        if (pass.hasOwnProperty('passName')) {
-            name = pass.passName;
+        return result;
+    }
+
+    function removeEmptyStatement(tree, options) {
+        var result;
+
+        if (options == null) {
+            options = { destructive: false };
+        }
+
+        if (options.destructive) {
+            result = tree;
         } else {
-            name = pass.name;
+            result = deepCopy(tree);
         }
-        passes.push(pass);
-        statuses.push(true);
-    }
 
-    function fillStatuses(bool) {
-        var i, iz;
-        for (i = 0, iz = statuses.length; i < iz; ++i) {
-            statuses[i] = bool;
-        }
-    }
+        modified = false;
 
-    function run(tree) {
-        var i, iz, pass, res, changed;
-        do {
-            changed = false;
-            for (i = 0, iz = passes.length; i < iz; ++i) {
-                pass = passes[i];
-                if (statuses[i]) {
-                    res = pass(tree, { destructive: false });
-                    if (res.modified) {
-                        changed = true;
-                        fillStatuses(true);
-                    } else {
-                        statuses[i] = false;
-                    }
-                    tree = res.result;
+        traverse(result, {
+            enter: function enter(node) {
+                var i, iz;
+                switch (node.type) {
+                    case Syntax.BlockStatement:
+                    case Syntax.Program:
+                        node.body = remove(node.body);
+                        break;
+
+                    case Syntax.SwitchCase:
+                        node.consequent = remove(node.consequent);
+                        break;
                 }
             }
-        } while (changed);
-        return tree;
+        });
+
+        return {
+            result: result,
+            modified: modified
+        };
     }
 
-    function optimize(tree, p) {
-        var i, iz;
-
-        statuses = [];
-        passes = [];
-
-        for (i = 0, iz = p.length; i < iz; ++i) {
-            addPass(p[i]);
-        }
-
-        return run(tree);
-    }
-
-    exports.optimize = optimize;
+    removeEmptyStatement.passName = 'removeEmptyStatement';
+    return removeEmptyStatement;
 }, this));
 /* vim: set sw=4 ts=4 et tw=80 : */

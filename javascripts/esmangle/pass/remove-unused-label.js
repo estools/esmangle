@@ -27,6 +27,8 @@
 (function (factory, global) {
     'use strict';
 
+    var ex;
+
     function namespace(str, obj) {
         var i, iz, names, name;
         names = str.split('.');
@@ -44,89 +46,70 @@
     // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
     // and plain browser loading,
     if (typeof define === 'function' && define.amd) {
-        define('esmangle/pass/transform-branch-to-expression', ['module', 'esmangle/common'], function(module, common) {
+        define('esmangle/pass/remove-unused-label', ['module', 'esmangle/common'], function(module, common) {
             module.exports = factory(common);
         });
     } else if (typeof module !== 'undefined') {
         module.exports = factory(require('../common'));
     } else {
-        namespace('esmangle.pass', global).transformBranchToExpression = factory(namespace('esmangle.common', global));
+        namespace('esmangle.pass', global).removeUnusedLabel = factory(namespace('esmangle.common', global));
     }
 }(function (common) {
     'use strict';
 
-    var Syntax, traverse, deepCopy, modified;
+    var Syntax, traverse, deepCopy, assert, scope, modified;
 
     Syntax = common.Syntax;
     traverse = common.traverse;
     deepCopy = common.deepCopy;
+    assert = common.assert;
 
-    function transform(node) {
-        if (node.type === Syntax.IfStatement) {
-            if (node.alternate) {
-                if (node.consequent.type === Syntax.ExpressionStatement && node.alternate.type === Syntax.ExpressionStatement) {
-                    // ok, we can reconstruct this to ConditionalExpression
-                    modified = true;
-                    return {
-                        type: Syntax.ExpressionStatement,
-                        expression: {
-                            type: Syntax.ConditionalExpression,
-                            test: node.test,
-                            consequent: node.consequent.expression,
-                            alternate: node.alternate.expression
-                        }
-                    };
-                }
-                if (node.consequent.type === Syntax.ReturnStatement && node.consequent.argument !== null && node.alternate.type === Syntax.ReturnStatement && node.alternate.argument !== null) {
-                    // pattern:
-                    //   if (cond) return a;
-                    //   else return b;
-                    modified = true;
-                    return {
-                        type: Syntax.ReturnStatement,
-                        argument: {
-                            type: Syntax.ConditionalExpression,
-                            test: node.test,
-                            consequent: node.consequent.argument,
-                            alternate: node.alternate.argument
-                        }
-                    };
-                }
-                if (node.consequent.type === Syntax.ThrowStatement && node.alternate.type === Syntax.ThrowStatement) {
-                    // pattern:
-                    //   if (cond) throw a;
-                    //   else throw b;
-                    modified = true;
-                    return {
-                        type: Syntax.ThrowStatement,
-                        argument: {
-                            type: Syntax.ConditionalExpression,
-                            test: node.test,
-                            consequent: node.consequent.argument,
-                            alternate: node.alternate.argument
-                        }
-                    };
-                }
-            } else {
-                if (node.consequent.type === Syntax.ExpressionStatement) {
-                    // ok, we can reconstruct this to LogicalExpression
-                    modified = true;
-                    return {
-                        type: Syntax.ExpressionStatement,
-                        expression: {
-                            type: Syntax.LogicalExpression,
-                            operator: '&&',
-                            left: node.test,
-                            right: node.consequent.expression
-                        }
-                    };
-                }
+    function Scope(upper) {
+        this.set = {};
+        this.unused = [];
+        this.upper = upper;
+    }
+
+    Scope.prototype.register = function register(node) {
+        var name;
+        if (node.type === Syntax.LabeledStatement) {
+            name = node.label.name;
+            common.assert(!this.set.hasOwnProperty(name), 'duplicate label is found');
+            this.set[name] = {
+                used: false,
+                stmt: node
+            };
+        }
+    };
+
+    Scope.prototype.unregister = function unregister(node) {
+        var name, ref;
+        if (node.type === Syntax.LabeledStatement) {
+            name = node.label.name;
+            ref = this.set[name];
+            delete this.set[name];
+            if (!ref.used) {
+                modified = true;
+                return node.body;
             }
         }
         return node;
-    }
+    };
 
-    function transformBranchToExpression(tree, options) {
+    Scope.prototype.resolve = function resolve(node) {
+        var name;
+        if (node.label) {
+            name = node.label.name;
+            common.assert(this.set.hasOwnProperty(name), 'unresolved label');
+            this.set[name].used = true;
+        }
+    };
+
+    Scope.prototype.close = function close() {
+        return this.upper;
+    };
+
+    function removeUnusedLabel(tree, options) {
         var result;
 
         if (options == null) {
@@ -139,29 +122,49 @@
             result = deepCopy(tree);
         }
 
+        scope = null;
         modified = false;
 
         traverse(result, {
+            enter: function enter(node) {
+                var i, iz;
+                switch (node.type) {
+                    case Syntax.Program:
+                    case Syntax.FunctionDeclaration:
+                    case Syntax.FunctionExpression:
+                        scope = new Scope(scope);
+                        break;
+
+                    case Syntax.LabeledStatement:
+                        scope.register(node);
+                        break;
+
+                    case Syntax.BreakStatement:
+                    case Syntax.ContinueStatement:
+                        scope.resolve(node);
+                        break;
+                }
+            },
             leave: function leave(node) {
                 var i, iz;
                 switch (node.type) {
                 case Syntax.BlockStatement:
                 case Syntax.Program:
                     for (i = 0, iz = node.body.length; i < iz; ++i) {
-                        node.body[i] = transform(node.body[i]);
+                        node.body[i] = scope.unregister(node.body[i]);
                     }
                     break;
 
                 case Syntax.SwitchCase:
                     for (i = 0, iz = node.consequent.length; i < iz; ++i) {
-                        node.consequent[i] = transform(node.consequent[i]);
+                        node.consequent[i] = scope.unregister(node.consequent[i]);
                     }
                     break;
 
                 case Syntax.IfStatement:
-                    node.consequent = transform(node.consequent);
+                    node.consequent = scope.unregister(node.consequent);
                     if (node.alternate) {
-                        node.alternate = transform(node.alternate);
+                        node.alternate = scope.unregister(node.alternate);
                     }
                     break;
 
@@ -171,8 +174,12 @@
                 case Syntax.ForInStatement:
                 case Syntax.WhileStatement:
                 case Syntax.WithStatement:
-                    node.body = transform(node.body);
+                    node.body = scope.unregister(node.body);
                     break;
+                }
+
+                if (node.type === Syntax.Program || node.type === Syntax.FunctionDeclaration || node.type === Syntax.FunctionExpression) {
+                    scope = scope.close();
                 }
             }
         });
@@ -183,7 +190,7 @@
         };
     }
 
-    transformBranchToExpression.passName = 'transformBranchToExpression';
-    return transformBranchToExpression;
+    removeUnusedLabel.passName = 'removeUnusedLabel';
+    return removeUnusedLabel;
 }, this));
 /* vim: set sw=4 ts=4 et tw=80 : */

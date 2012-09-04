@@ -23,7 +23,7 @@
 */
 
 /*jslint bitwise:true */
-/*global esmangle:true, exports:true, define:true, require:true*/
+/*global esmangle:true, module:true, define:true, require:true*/
 (function (factory, global) {
     'use strict';
 
@@ -46,13 +46,15 @@
     // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
     // and plain browser loading,
     if (typeof define === 'function' && define.amd) {
-        define('esmangle/pass/remove-wasted-blocks', ['exports', 'esmangle/common'], factory);
-    } else if (typeof exports !== 'undefined') {
-        factory(exports, require('../common'));
+        define('esmangle/pass/remove-wasted-blocks', ['module', 'esmangle/common'], function(module, common) {
+            module.exports = factory(common);
+        });
+    } else if (typeof module !== 'undefined') {
+        module.exports = factory(require('../common'));
     } else {
-        factory(namespace('esmangle.pass', global), namespace('esmangle.common', global));
+        namespace('esmangle.pass', global).removeWastedBlocks = factory(namespace('esmangle.common', global));
     }
-}(function (exports, common) {
+}(function (common) {
     'use strict';
 
     var Syntax, traverse, deepCopy, modified;
@@ -62,27 +64,37 @@
     deepCopy = common.deepCopy;
 
     function trailingIf(node) {
-        switch (node.type) {
-        case Syntax.IfStatement:
-            if (!node.alternate) {
-                return true;
-            }
-            return trailingIf(node.alternate);
+        while (true) {
+            switch (node.type) {
+            case Syntax.IfStatement:
+                if (!node.alternate) {
+                    return true;
+                }
+                node = node.alternate;
+                continue;
 
-        case Syntax.LabeledStatement:
-        case Syntax.ForStatement:
-        case Syntax.ForInStatement:
-        case Syntax.WhileStatement:
-        case Syntax.WithStatement:
-            return trailingIf(node.body);
+            case Syntax.LabeledStatement:
+            case Syntax.ForStatement:
+            case Syntax.ForInStatement:
+            case Syntax.WhileStatement:
+            case Syntax.WithStatement:
+                node = node.body;
+                continue;
+            }
+            return false;
         }
-        return false;
     }
 
     function remove(node) {
         while (node.type === Syntax.BlockStatement && node.body.length === 1) {
             modified = true;
             node = node.body[0];
+        }
+        // empty body
+        if (node.type === Syntax.BlockStatement && node.body.length === 0) {
+            return {
+                type: Syntax.EmptyStatement
+            };
         }
         return node;
     }
@@ -155,6 +167,6 @@
     }
 
     removeWastedBlocks.passName = 'removeWastedBlocks';
-    exports.removeWastedBlocks = removeWastedBlocks;
+    return removeWastedBlocks;
 }, this));
 /* vim: set sw=4 ts=4 et tw=80 : */

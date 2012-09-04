@@ -23,10 +23,12 @@
     <script src="javascripts/escodegen.js"></script>
     <script src="javascripts/esmangle.js"></script>
     <script src="javascripts/esmangle/common.js"></script>
-    <script src="javascripts/esmangle/optimize.js"></script>
+    <script src="javascripts/esmangle/pass/remove-unused-label.js"></script>
+    <script src="javascripts/esmangle/pass/remove-empty-statement.js"></script>
     <script src="javascripts/esmangle/pass/remove-wasted-blocks.js"></script>
     <script src="javascripts/esmangle/pass/transform-to-sequence-expression.js"></script>
     <script src="javascripts/esmangle/pass/transform-branch-to-expression.js"></script>
+    <script src="javascripts/esmangle/pass/reduce-branch-jump.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <style type="text/css">
 .CodeMirror pre {
@@ -71,11 +73,52 @@ href="https://developer.mozilla.org/en/SpiderMonkey/Parser_API">Mozilla Parser A
 
 <pre><code>var ast = esprima.parse(code);
 var result = esmangle.mangle(ast);  // gets mangled result
+console.log(escodegen.generate(result));  // dump AST
 </code></pre>
 
 <p>Or you can simply use this <code>esmangle</code> command in the shell.</p>
 
 <pre><code>esmangle file.js
+</code></pre>
+
+
+<p>Get more compressed result: (in Node.js)</p>
+<pre><code>var ast = esprima.parse(code);
+// You can add your original pass
+// See lib/pass/*.js for pass function format
+var passes = [
+    // remove unused label
+    esmangle.require('lib/pass/remove-unused-label'),
+
+    // remove empty statement
+    esmangle.require('lib/pass/remove-empty-statement'),
+
+    // remove wasted blocks
+    esmangle.require('lib/pass/remove-wasted-blocks'),
+
+    // transform to sequence expression
+    esmangle.require('lib/pass/transform-to-sequence-expression'),
+
+    // transform branch to expression
+    esmangle.require('lib/pass/transform-branch-to-expression'),
+
+    // reduce branch jump
+    esmangle.require('lib/pass/reduce-branch-jump')
+];
+
+// Get optimized AST
+var optimized = esmangle.optimize(ast, passes);
+var result = esmangle.mangle(optimized);  // gets mangled AST
+console.log(escodegen.generate(result, {
+    format: {
+        renumber: true,
+        hexadecimal: true,
+        escapeless: true,
+        compact: true,
+        semicolons: false,
+        parentheses: false
+    }
+}));  // dump AST
 </code></pre>
 
 <h3>Demo</h3>
@@ -154,12 +197,17 @@ function minify() {
     try {
         tree = esprima.parse(code);
         passes = [
+            esmangle.pass.removeUnusedLabel,
+            esmangle.pass.removeEmptyStatement,
             esmangle.pass.removeWastedBlocks,
             esmangle.pass.transformToSequenceExpression,
-            esmangle.pass.transformBranchToExpression
+            esmangle.pass.transformBranchToExpression,
+            esmangle.pass.reduceBranchJump
         ];
 
-        tree = esmangle.optimize.optimize(tree, passes);
+        tree = esmangle.optimize(tree, passes, {
+            destructive: true
+        });
 
         tree = esmangle.mangle(tree, {
             destructive: true

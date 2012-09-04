@@ -65,7 +65,7 @@
         scope;
 
     // Sync with package.json.
-    VERSION = '0.0.3-dev';
+    VERSION = '0.0.4-dev';
 
     Syntax = {
         AssignmentExpression: 'AssignmentExpression',
@@ -128,7 +128,7 @@
     }
 
     function deepCopy(obj) {
-        function deepCopyInernal(obj, result) {
+        function deepCopyInternal(obj, result) {
             var key, val;
             for (key in obj) {
                 if (obj.hasOwnProperty(key)) {
@@ -137,7 +137,7 @@
                         if (val instanceof RegExp) {
                             val = new RegExp(val);
                         } else {
-                            val = deepCopyInernal(val, isArray(val) ? [] : {});
+                            val = deepCopyInternal(val, isArray(val) ? [] : {});
                         }
                     }
                     result[key] = val;
@@ -145,7 +145,7 @@
             }
             return result;
         }
-        return deepCopyInernal(obj, isArray(obj) ? [] : {});
+        return deepCopyInternal(obj, isArray(obj) ? [] : {});
     }
 
     // 7.6.1.2 Future Reserved Words
@@ -301,7 +301,7 @@
         var variable;
 
         this.type =
-            (block.type === 'CatchCaluse') ? 'catch' :
+            (block.type === 'CatchClause') ? 'catch' :
             (block.type === 'WithStatement') ? 'with' :
             (block.type === 'Program') ? 'global' : 'function';
         this.set = {};
@@ -507,7 +507,7 @@
     };
 
     Scope.isRequired = function isRequired(node) {
-        return node.type === 'Program' || node.type === 'FunctionExpression' || node.type === 'FunctionDeclaration' || node.type === 'WithStatement' || node.type === 'CatchCaluse';
+        return node.type === 'Program' || node.type === 'FunctionExpression' || node.type === 'FunctionDeclaration' || node.type === 'WithStatement' || node.type === 'CatchClause';
     };
 
     // simple visitor implementation
@@ -841,11 +841,91 @@
         return result;
     }
 
+    function optimize(tree, p, options) {
+        var i, iz, pass, res, changed, statuses, passes, result;
+
+        function addPass(pass) {
+            var name;
+            if (typeof pass !== 'function') {
+                // automatic lookup pass (esmangle pass format)
+                name = Object.keys(pass)[0];
+                pass = pass[name];
+            }
+            if (pass.hasOwnProperty('passName')) {
+                name = pass.passName;
+            } else {
+                name = pass.name;
+            }
+            passes.push(pass);
+            statuses.push(true);
+        }
+
+        function fillStatuses(bool) {
+            var i, iz;
+            for (i = 0, iz = statuses.length; i < iz; ++i) {
+                statuses[i] = bool;
+            }
+        }
+
+        if (options == null) {
+            options = { destructive: false };
+        }
+
+        if (options.destructive) {
+            result = tree;
+        } else {
+            result = deepCopy(tree);
+        }
+
+        statuses = [];
+        passes = [];
+
+
+        for (i = 0, iz = p.length; i < iz; ++i) {
+            addPass(p[i]);
+        }
+
+        do {
+            changed = false;
+            for (i = 0, iz = passes.length; i < iz; ++i) {
+                pass = passes[i];
+                if (statuses[i]) {
+                    res = pass(result, { destructive: true });
+                    if (res.modified) {
+                        changed = true;
+                        fillStatuses(true);
+                    } else {
+                        statuses[i] = false;
+                    }
+                    result = res.result;
+                }
+            }
+        } while (changed);
+        return result;
+    }
+
     exports.version = VERSION;
     exports.generateNextName = generateNextName;
     exports.mangle = mangle;
+    exports.optimize = optimize;
+
     if (typeof exports.pass === 'undefined') {
         exports.pass = {};
+    }
+
+    if (typeof process !== 'undefined') {
+        // for node.js environment
+        exports.require = (function () {
+            var fs = require('fs'),
+                path = require('path'),
+                root = path.join(path.dirname(fs.realpathSync(__filename)));
+
+            return function() {
+                var args = Array.prototype.slice.call(arguments);
+                args[0] = path.join(root, args[0]);
+                return require.apply(this, args);
+            };
+        }());
     }
 }, this));
 /* vim: set sw=4 ts=4 et tw=80 : */
