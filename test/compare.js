@@ -37,12 +37,12 @@ var fs = require('fs'),
 esmangle = require(path.join(root, 'esmangle'));
 esmangle.optimize = require(path.join(root, 'lib', 'optimize'));
 passes = [
-    require(path.join(root, 'lib', 'pass', 'remove-unused-label')),
-    require(path.join(root, 'lib', 'pass', 'remove-empty-statement')),
-    require(path.join(root, 'lib', 'pass', 'remove-wasted-blocks')),
-    require(path.join(root, 'lib', 'pass', 'transform-to-sequence-expression')),
-    require(path.join(root, 'lib', 'pass', 'transform-branch-to-expression')),
-    require(path.join(root, 'lib', 'pass', 'reduce-branch-jump'))
+    esmangle.require('lib/pass/remove-unused-label'),
+    esmangle.require('lib/pass/remove-empty-statement'),
+    esmangle.require('lib/pass/remove-wasted-blocks'),
+    esmangle.require('lib/pass/transform-to-sequence-expression'),
+    esmangle.require('lib/pass/transform-branch-to-expression'),
+    esmangle.require('lib/pass/reduce-branch-jump')
 ];
 
 describe('compare mangling result', function () {

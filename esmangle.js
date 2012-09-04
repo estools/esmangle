@@ -847,5 +847,19 @@
     if (typeof exports.pass === 'undefined') {
         exports.pass = {};
     }
+    if (typeof module !== 'undefined') {
+        // for node.js environment
+        exports.require = (function () {
+            var fs = require('fs'),
+                path = require('path'),
+                root = path.join(path.dirname(fs.realpathSync(__filename)));
+
+            return function() {
+                var args = Array.prototype.slice.call(arguments);
+                args[0] = path.join(root, args[0]);
+                return require.apply(this, args);
+            };
+        }());
+    }
 }, this));
 /* vim: set sw=4 ts=4 et tw=80 : */
