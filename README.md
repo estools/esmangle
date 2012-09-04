@@ -31,29 +31,38 @@ Get more compressed result: (in Node.js)
     // You can add your original pass
     // See lib/pass/*.js for pass function format
     var passes = [
-      // remove unused label
-      esmangle.require('lib/pass/remove-unused-label'),
+        // remove unused label
+        esmangle.require('lib/pass/remove-unused-label'),
 
-      // remove empty statement
-      esmangle.require('lib/pass/remove-empty-statement'),
+        // remove empty statement
+        esmangle.require('lib/pass/remove-empty-statement'),
 
-      // remove wasted blocks
-      esmangle.require('lib/pass/remove-wasted-blocks'),
+        // remove wasted blocks
+        esmangle.require('lib/pass/remove-wasted-blocks'),
 
-      // transform to sequence expression
-      esmangle.require('lib/pass/transform-to-sequence-expression'),
+        // transform to sequence expression
+        esmangle.require('lib/pass/transform-to-sequence-expression'),
 
-      // transform branch to expression
-      esmangle.require('lib/pass/transform-branch-to-expression'),
+        // transform branch to expression
+        esmangle.require('lib/pass/transform-branch-to-expression'),
 
-      // reduce branch jump
-      esmangle.require('lib/pass/reduce-branch-jump')
+        // reduce branch jump
+        esmangle.require('lib/pass/reduce-branch-jump')
     ];
 
     // Get optimized AST
     var optimized = esmangle.optimize(ast, passes);
     var result = esmangle.mangle(optimized);  // gets mangled AST
-    console.log(escodegen.generate(result));  // dump AST
+    console.log(escodegen.generate(tree, {
+        format: {
+            renumber: true,
+            hexadecimal: true,
+            escapeless: true,
+            compact: true,
+            semicolons: false,
+            parentheses: false
+        }
+    }));
 
 ### Note
 
