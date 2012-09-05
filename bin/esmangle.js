@@ -43,6 +43,7 @@ passes = [
     esmangle.require('lib/pass/remove-wasted-blocks'),
     esmangle.require('lib/pass/transform-to-sequence-expression'),
     esmangle.require('lib/pass/transform-branch-to-expression'),
+    esmangle.require('lib/pass/reduce-sequence-expression'),
     esmangle.require('lib/pass/reduce-branch-jump')
 ];
 
