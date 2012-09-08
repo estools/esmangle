@@ -1,1 +1,1 @@
-do stmt; while(cond)
+do stmt;while(cond)
