@@ -37,6 +37,7 @@ var fs = require('fs'),
 
 esmangle = require(path.join(root, 'esmangle'));
 passes = [
+    esmangle.require('lib/pass/transform-dynamic-to-static-property-access'),
     esmangle.require('lib/pass/reordering-function-declarations'),
     esmangle.require('lib/pass/remove-unused-label'),
     esmangle.require('lib/pass/remove-empty-statement'),
