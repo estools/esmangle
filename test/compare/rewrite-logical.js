@@ -1,2 +1,0 @@
-!cond && test;
-!cond || test;
