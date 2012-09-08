@@ -49,6 +49,7 @@ passes = [
 ];
 
 post = [
+    esmangle.require('lib/post/transform-static-to-dynamic-property-access'),
     esmangle.require('lib/post/rewrite-boolean'),
     esmangle.require('lib/post/rewrite-conditional-expression')
 ];
