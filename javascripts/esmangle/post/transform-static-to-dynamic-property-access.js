@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2012 Yusuke Suzuki <utatane.tea@gmail.com>
+  Copyright (C) 2012 Michael Ficarra <esmangle.copyright@michael.ficarra.me>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
@@ -27,8 +27,6 @@
 (function (factory, global) {
     'use strict';
 
-    var ex;
-
     function namespace(str, obj) {
         var i, iz, names, name;
         names = str.split('.');
@@ -46,93 +44,69 @@
     // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
     // and plain browser loading,
     if (typeof define === 'function' && define.amd) {
-        define('esmangle/pass/remove-wasted-blocks', ['module', 'esmangle/common'], function(module, common) {
+        define('esmangle/post/transform-static-to-dynamic-property-access', ['module', 'esmangle/common'], function(module, common) {
             module.exports = factory(common);
         });
     } else if (typeof module !== 'undefined') {
         module.exports = factory(require('../common'));
     } else {
-        namespace('esmangle.pass', global).removeWastedBlocks = factory(namespace('esmangle.common', global));
+        namespace('esmangle.post', global).transformStaticToDynamicPropertyAccess = factory(namespace('esmangle.common', global));
     }
 }(function (common) {
     'use strict';
 
-    var Syntax, modified;
+    var Syntax;
 
     Syntax = common.Syntax;
 
-    function remove(node) {
-        while (node.type === Syntax.BlockStatement && node.body.length === 1) {
-            modified = true;
-            node = node.body[0];
-        }
-        // empty body
-        if (node.type === Syntax.BlockStatement && node.body.length === 0) {
-            return {
-                type: Syntax.EmptyStatement
-            };
-        }
-        return node;
-    }
-
-    function removeWastedBlocks(tree, options) {
+    function transformStaticToDynamicPropertyAccess(tree, options) {
         var result;
 
         if (options == null) {
             options = { destructive: false };
         }
 
-        if (options.destructive) {
-            result = tree;
-        } else {
-            result = common.deepCopy(tree);
-        }
-
-        modified = false;
+        result = options.destructive ? tree : common.deepCopy(tree);
 
         common.traverse(result, {
             enter: function enter(node) {
-                var i, iz;
-                switch (node.type) {
-                case Syntax.BlockStatement:
-                case Syntax.Program:
-                    for (i = 0, iz = node.body.length; i < iz; ++i) {
-                        node.body[i] = remove(node.body[i]);
-                    }
-                    break;
-
-                case Syntax.SwitchCase:
-                    for (i = 0, iz = node.consequent.length; i < iz; ++i) {
-                        node.consequent[i] = remove(node.consequent[i]);
-                    }
-                    break;
-
-                case Syntax.IfStatement:
-                    node.consequent = remove(node.consequent);
-                    if (node.alternate) {
-                        node.alternate = remove(node.alternate);
-                    }
-                    break;
-
-                case Syntax.LabeledStatement:
-                case Syntax.DoWhileStatement:
-                case Syntax.ForStatement:
-                case Syntax.ForInStatement:
-                case Syntax.WhileStatement:
-                case Syntax.WithStatement:
-                    node.body = remove(node.body);
-                    break;
+                var property;
+                if (node.type !== Syntax.MemberExpression || node.computed || node.property.type !== Syntax.Identifier) return;
+                property = node.property;
+                switch (property.name) {
+                    case 'undefined':
+                        node.computed = true;
+                        node.property = common.moveLocation(property, {
+                            type: Syntax.UnaryExpression,
+                            operator: 'void',
+                            argument: {type: Syntax.Literal, value: 0}
+                        });
+                        break;
+                    case 'true':
+                    case 'false':
+                        node.computed = true;
+                        node.property = common.moveLocation(property, {
+                            type: Syntax.Literal,
+                            value: property.name === 'true'
+                        });
+                        break;
+                    case 'Infinity':
+                        node.computed = true;
+                        node.property = common.moveLocation(property, {
+                            type: Syntax.BinaryExpression,
+                            operator: '/',
+                            left: {type: Syntax.Literal, value: 1},
+                            right: {type: Syntax.Literal, value: 0}
+                        });
+                        break;
                 }
             }
         });
 
-        return {
-            result: result,
-            modified: modified
-        };
+        return result;
     }
 
-    removeWastedBlocks.passName = 'remove-wasted-blocks';
-    return removeWastedBlocks;
+    transformStaticToDynamicPropertyAccess.passName = 'transform-static-to-dynamic-property-access';
+    return transformStaticToDynamicPropertyAccess;
 }, this));
 /* vim: set sw=4 ts=4 et tw=80 : */

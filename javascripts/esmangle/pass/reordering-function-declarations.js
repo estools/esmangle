@@ -44,51 +44,42 @@
     // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
     // and plain browser loading,
     if (typeof define === 'function' && define.amd) {
-        define('esmangle/pass/reduce-branch-jump', ['module', 'esmangle/common'], function(module, common) {
+        define('esmangle/pass/reordering-function-declarations', ['module', 'esmangle/common'], function(module, common) {
             module.exports = factory(common);
         });
     } else if (typeof module !== 'undefined') {
         module.exports = factory(require('../common'));
     } else {
-        namespace('esmangle.pass', global).reduceBranchJump = factory(namespace('esmangle.common', global));
+        namespace('esmangle.pass', global).reorderingFunctionDeclarations = factory(namespace('esmangle.common', global));
     }
 }(function (common) {
     'use strict';
 
-    var Syntax, modified;
+    var Syntax, traverse, deepCopy, modified;
 
     Syntax = common.Syntax;
+    traverse = common.traverse;
+    deepCopy = common.deepCopy;
 
-    function reduce(ary, index) {
-        var node, sibling;
-        node = ary[index];
-        sibling = ary[index + 1];
-        if (node.type === Syntax.IfStatement) {
-            if (!node.alternate) {
-                if (node.consequent.type === Syntax.ReturnStatement && node.consequent.argument !== null &&
-                    sibling.type === Syntax.ReturnStatement && sibling.argument !== null) {
-                    // pattern:
-                    //     if (cond) return v;
-                    //     return v2;
+    function reordering(array) {
+        var i, iz, node, declarations, others;
+        declarations = [];
+        others = [];
+        for (i = 0, iz = array.length; i < iz; ++i) {
+            node = array[i];
+            if (node.type === Syntax.FunctionDeclaration) {
+                if (declarations.length !== i) {
                     modified = true;
-                    ary.splice(index, 1);
-                    ary[index] = common.moveLocation(node, {
-                        type: Syntax.ReturnStatement,
-                        argument: {
-                            type: Syntax.ConditionalExpression,
-                            test: node.test,
-                            consequent: node.consequent.argument,
-                            alternate: sibling.argument
-                        }
-                    });
-                    return true;
                 }
+                declarations.push(node);
+            } else {
+                others.push(node);
             }
         }
-        return false;
+        return declarations.concat(others);
     }
 
-    function reduceBranchJump(tree, options) {
+    function reorderingFunctionDeclarations(tree, options) {
         var result;
 
         if (options == null) {
@@ -98,33 +89,23 @@
         if (options.destructive) {
             result = tree;
         } else {
-            result = common.deepCopy(tree);
+            result = deepCopy(tree);
         }
 
         modified = false;
 
-        common.traverse(result, {
-            leave: function leave(node) {
-                var i;
-                switch (node.type) {
-                case Syntax.BlockStatement:
-                case Syntax.Program:
-                    i = 0;
-                    while (i < (node.body.length - 1)) {
-                        if (!reduce(node.body, i)) {
-                            ++i;
-                        }
-                    }
-                    break;
 
-                case Syntax.SwitchCase:
-                    i = 0;
-                    while (i < (node.consequent.length - 1)) {
-                        if (!reduce(node.consequent, i)) {
-                            ++i;
-                        }
-                    }
-                    break;
+        traverse(result, {
+            leave: function leave(node) {
+                switch (node.type) {
+                    case Syntax.Program:
+                        node.body = reordering(node.body);
+                        break;
+
+                    case Syntax.FunctionDeclaration:
+                    case Syntax.FunctionExpression:
+                        node.body.body = reordering(node.body.body);
+                        break;
                 }
             }
         });
@@ -135,7 +116,7 @@
         };
     }
 
-    reduceBranchJump.passName = 'reduce-branch-jump';
-    return reduceBranchJump;
+    reorderingFunctionDeclarations.passName = 'reordering-function-declarations';
+    return reorderingFunctionDeclarations;
 }, this));
 /* vim: set sw=4 ts=4 et tw=80 : */

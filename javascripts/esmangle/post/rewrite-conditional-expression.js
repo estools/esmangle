@@ -44,51 +44,34 @@
     // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
     // and plain browser loading,
     if (typeof define === 'function' && define.amd) {
-        define('esmangle/pass/reduce-branch-jump', ['module', 'esmangle/common'], function(module, common) {
+        define('esmangle/post/rewite-conditional-expression', ['module', 'esmangle/common'], function(module, common) {
             module.exports = factory(common);
         });
     } else if (typeof module !== 'undefined') {
         module.exports = factory(require('../common'));
     } else {
-        namespace('esmangle.pass', global).reduceBranchJump = factory(namespace('esmangle.common', global));
+        namespace('esmangle.post', global).rewriteConditionalExpression = factory(namespace('esmangle.common', global));
     }
 }(function (common) {
     'use strict';
 
-    var Syntax, modified;
+    var Syntax;
 
     Syntax = common.Syntax;
 
-    function reduce(ary, index) {
-        var node, sibling;
-        node = ary[index];
-        sibling = ary[index + 1];
-        if (node.type === Syntax.IfStatement) {
-            if (!node.alternate) {
-                if (node.consequent.type === Syntax.ReturnStatement && node.consequent.argument !== null &&
-                    sibling.type === Syntax.ReturnStatement && sibling.argument !== null) {
-                    // pattern:
-                    //     if (cond) return v;
-                    //     return v2;
-                    modified = true;
-                    ary.splice(index, 1);
-                    ary[index] = common.moveLocation(node, {
-                        type: Syntax.ReturnStatement,
-                        argument: {
-                            type: Syntax.ConditionalExpression,
-                            test: node.test,
-                            consequent: node.consequent.argument,
-                            alternate: sibling.argument
-                        }
-                    });
-                    return true;
-                }
-            }
+    function rewrite(node) {
+        var test, consequent, alternate;
+        test = node.test;
+        consequent = node.consequent;
+        alternate = node.alternate;
+        if (test.type === Syntax.UnaryExpression && test.operator === '!') {
+            node.consequent = alternate;
+            node.alternate = consequent;
+            node.test = test.argument;
         }
-        return false;
     }
 
-    function reduceBranchJump(tree, options) {
+    function rewriteConditionalExpression(tree, options) {
         var result;
 
         if (options == null) {
@@ -101,41 +84,18 @@
             result = common.deepCopy(tree);
         }
 
-        modified = false;
-
         common.traverse(result, {
-            leave: function leave(node) {
-                var i;
-                switch (node.type) {
-                case Syntax.BlockStatement:
-                case Syntax.Program:
-                    i = 0;
-                    while (i < (node.body.length - 1)) {
-                        if (!reduce(node.body, i)) {
-                            ++i;
-                        }
-                    }
-                    break;
-
-                case Syntax.SwitchCase:
-                    i = 0;
-                    while (i < (node.consequent.length - 1)) {
-                        if (!reduce(node.consequent, i)) {
-                            ++i;
-                        }
-                    }
-                    break;
+            enter: function enter(node) {
+                if (node.type === Syntax.ConditionalExpression) {
+                    rewrite(node);
                 }
             }
         });
 
-        return {
-            result: result,
-            modified: modified
-        };
+        return result;
     }
 
-    reduceBranchJump.passName = 'reduce-branch-jump';
-    return reduceBranchJump;
+    rewriteConditionalExpression.passName = 'rewrite-conditional-expression';
+    return rewriteConditionalExpression;
 }, this));
 /* vim: set sw=4 ts=4 et tw=80 : */

@@ -63,7 +63,7 @@
     traverse = common.traverse;
     deepCopy = common.deepCopy;
 
-    function remove(array) {
+    function remove(node, array) {
         var i, iz, node, result;
         result = [];
         for (i = 0, iz = array.length; i < iz; ++i) {
@@ -98,11 +98,11 @@
                 switch (node.type) {
                     case Syntax.BlockStatement:
                     case Syntax.Program:
-                        node.body = remove(node.body);
+                        node.body = remove(node, node.body);
                         break;
 
                     case Syntax.SwitchCase:
-                        node.consequent = remove(node.consequent);
+                        node.consequent = remove(node, node.consequent);
                         break;
                 }
             }
@@ -114,7 +114,7 @@
         };
     }
 
-    removeEmptyStatement.passName = 'removeEmptyStatement';
+    removeEmptyStatement.passName = 'remove-empty-statement';
     return removeEmptyStatement;
 }, this));
 /* vim: set sw=4 ts=4 et tw=80 : */

@@ -65,7 +65,7 @@
         scope;
 
     // Sync with package.json.
-    VERSION = '0.0.4-dev';
+    VERSION = '0.0.5-dev';
 
     Syntax = {
         AssignmentExpression: 'AssignmentExpression',
@@ -267,7 +267,7 @@
         return res;
     }
 
-    NameSequence = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    NameSequence = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_$'.split('');
 
     function generateNextName(name) {
         var ch, index, cur;
@@ -305,7 +305,6 @@
             (block.type === 'WithStatement') ? 'with' :
             (block.type === 'Program') ? 'global' : 'function';
         this.set = {};
-        this.names = [];
         this.tip = 'a';
         this.dynamic = this.type === 'global' || this.type === 'with';
         this.block = block;
@@ -542,7 +541,7 @@
         Property: ['key', 'value'],
         ReturnStatement: ['argument'],
         SequenceExpression: ['expressions'],
-        SwitchStatement: ['descriminant', 'cases'],
+        SwitchStatement: ['discriminant', 'cases'],
         SwitchCase: ['test', 'consequent'],
         ThisExpression: [],
         ThrowStatement: ['argument'],
@@ -781,7 +780,7 @@
                     break;
 
                 case Syntax.SwitchStatement:
-                    scope.referencing(node.descriminant);
+                    scope.referencing(node.discriminant);
                     break;
 
                 case Syntax.SwitchCase:
@@ -839,6 +838,57 @@
         }
 
         return result;
+    }
+
+    // recover some broken AST
+
+    function recover(tree) {
+        function trailingIf(node) {
+            while (true) {
+                switch (node.type) {
+                case Syntax.IfStatement:
+                    if (!node.alternate) {
+                        return true;
+                    }
+                    node = node.alternate;
+                    continue;
+
+                case Syntax.LabeledStatement:
+                case Syntax.ForStatement:
+                case Syntax.ForInStatement:
+                case Syntax.WhileStatement:
+                case Syntax.WithStatement:
+                    node = node.body;
+                    continue;
+                }
+                return false;
+            }
+        }
+
+        function wrap(node) {
+            if (node.type === Syntax.BlockStatement) {
+                return node;
+            }
+
+            if (trailingIf(node)) {
+                return {
+                    type: Syntax.BlockStatement,
+                    body: [ node ]
+                };
+            }
+            return node;
+        }
+
+        traverse(tree, {
+            leave: function leave(node) {
+                if (node.type === Syntax.IfStatement && node.alternate) {
+                    // force wrap up or not
+                    node.consequent = wrap(node.consequent);
+                }
+            }
+        });
+
+        return tree;
     }
 
     function optimize(tree, p, options) {
@@ -901,7 +951,8 @@
                 }
             }
         } while (changed);
-        return result;
+
+        return recover(result);
     }
 
     exports.version = VERSION;

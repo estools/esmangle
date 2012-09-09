@@ -44,13 +44,13 @@
     // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
     // and plain browser loading,
     if (typeof define === 'function' && define.amd) {
-        define('esmangle/pass/reduce-branch-jump', ['module', 'esmangle/common'], function(module, common) {
+        define('esmangle/pass/transform-dynamic-to-static-property-access', ['module', 'esmangle/common'], function(module, common) {
             module.exports = factory(common);
         });
     } else if (typeof module !== 'undefined') {
         module.exports = factory(require('../common'));
     } else {
-        namespace('esmangle.pass', global).reduceBranchJump = factory(namespace('esmangle.common', global));
+        namespace('esmangle.pass', global).transformDynamicToStaticPropertyAccess = factory(namespace('esmangle.common', global));
     }
 }(function (common) {
     'use strict';
@@ -59,36 +59,27 @@
 
     Syntax = common.Syntax;
 
-    function reduce(ary, index) {
-        var node, sibling;
-        node = ary[index];
-        sibling = ary[index + 1];
-        if (node.type === Syntax.IfStatement) {
-            if (!node.alternate) {
-                if (node.consequent.type === Syntax.ReturnStatement && node.consequent.argument !== null &&
-                    sibling.type === Syntax.ReturnStatement && sibling.argument !== null) {
-                    // pattern:
-                    //     if (cond) return v;
-                    //     return v2;
-                    modified = true;
-                    ary.splice(index, 1);
-                    ary[index] = common.moveLocation(node, {
-                        type: Syntax.ReturnStatement,
-                        argument: {
-                            type: Syntax.ConditionalExpression,
-                            test: node.test,
-                            consequent: node.consequent.argument,
-                            alternate: sibling.argument
-                        }
-                    });
-                    return true;
-                }
+    function isIdentifier(name) {
+        var i, iz;
+        // fallback for ES3
+        if (common.isKeyword(name) || common.isRestrictedWord(name)) {
+            return false;
+        }
+        if (name.length === 0) {
+            return false;
+        }
+        if (!common.isIdentifierStart(name.charAt(0))) {
+            return false;
+        }
+        for (i = 1, iz = name.length; i < iz; ++i) {
+            if (!common.isIdentifierPart(name.charAt(i))) {
+                return false;
             }
         }
-        return false;
+        return true;
     }
 
-    function reduceBranchJump(tree, options) {
+    function transformDynamicToStaticPropertyAccess(tree, options) {
         var result;
 
         if (options == null) {
@@ -102,29 +93,28 @@
         }
 
         modified = false;
-
         common.traverse(result, {
-            leave: function leave(node) {
-                var i;
-                switch (node.type) {
-                case Syntax.BlockStatement:
-                case Syntax.Program:
-                    i = 0;
-                    while (i < (node.body.length - 1)) {
-                        if (!reduce(node.body, i)) {
-                            ++i;
+            enter: function enter(node) {
+                var property;
+                if (node.type === Syntax.MemberExpression && node.computed) {
+                    property = node.property;
+                    if (property.type === Syntax.Literal && typeof property.value === 'string') {
+                        if (isIdentifier(property.value)) {
+                            modified = true;
+                            node.computed = false;
+                            node.property = common.moveLocation(property, {
+                                type: Syntax.Identifier,
+                                name: property.value
+                            });
+                        } else if (property.value === Number(property.value).toString()) {
+                            modified = true;
+                            node.computed = true;
+                            node.property = common.moveLocation(property, {
+                                type: Syntax.Literal,
+                                value: Number(property.value)
+                            });
                         }
                     }
-                    break;
-
-                case Syntax.SwitchCase:
-                    i = 0;
-                    while (i < (node.consequent.length - 1)) {
-                        if (!reduce(node.consequent, i)) {
-                            ++i;
-                        }
-                    }
-                    break;
                 }
             }
         });
@@ -135,7 +125,7 @@
         };
     }
 
-    reduceBranchJump.passName = 'reduce-branch-jump';
-    return reduceBranchJump;
+    transformDynamicToStaticPropertyAccess.passName = 'transform-dynamic-to-static-property-access';
+    return transformDynamicToStaticPropertyAccess;
 }, this));
 /* vim: set sw=4 ts=4 et tw=80 : */

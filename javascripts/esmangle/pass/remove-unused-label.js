@@ -190,7 +190,7 @@
         };
     }
 
-    removeUnusedLabel.passName = 'removeUnusedLabel';
+    removeUnusedLabel.passName = 'remove-unused-label';
     return removeUnusedLabel;
 }, this));
 /* vim: set sw=4 ts=4 et tw=80 : */

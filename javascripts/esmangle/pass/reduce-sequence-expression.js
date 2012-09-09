@@ -44,51 +44,44 @@
     // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
     // and plain browser loading,
     if (typeof define === 'function' && define.amd) {
-        define('esmangle/pass/reduce-branch-jump', ['module', 'esmangle/common'], function(module, common) {
+        define('esmangle/pass/reduce-sequence-expression', ['module', 'esmangle/common'], function(module, common) {
             module.exports = factory(common);
         });
     } else if (typeof module !== 'undefined') {
         module.exports = factory(require('../common'));
     } else {
-        namespace('esmangle.pass', global).reduceBranchJump = factory(namespace('esmangle.common', global));
+        namespace('esmangle.pass', global).reduceSequenceExpression = factory(namespace('esmangle.common', global));
     }
 }(function (common) {
     'use strict';
 
-    var Syntax, modified;
+    var Syntax, traverse, deepCopy, modified;
 
     Syntax = common.Syntax;
+    traverse = common.traverse;
+    deepCopy = common.deepCopy;
 
-    function reduce(ary, index) {
-        var node, sibling;
-        node = ary[index];
-        sibling = ary[index + 1];
-        if (node.type === Syntax.IfStatement) {
-            if (!node.alternate) {
-                if (node.consequent.type === Syntax.ReturnStatement && node.consequent.argument !== null &&
-                    sibling.type === Syntax.ReturnStatement && sibling.argument !== null) {
-                    // pattern:
-                    //     if (cond) return v;
-                    //     return v2;
-                    modified = true;
-                    ary.splice(index, 1);
-                    ary[index] = common.moveLocation(node, {
-                        type: Syntax.ReturnStatement,
-                        argument: {
-                            type: Syntax.ConditionalExpression,
-                            test: node.test,
-                            consequent: node.consequent.argument,
-                            alternate: sibling.argument
-                        }
-                    });
-                    return true;
+    function reduce(node) {
+        var i, iz, j, jz, expr, result;
+        result = [];
+        for (i = 0, iz = node.expressions.length; i < iz; ++i) {
+            expr = node.expressions[i];
+            if (expr.type === Syntax.SequenceExpression) {
+                modified = true;
+                // delete SequenceExpression location information,
+                // because information of SequenceExpression is not used effectively in source-map.
+                common.deleteLocation(node);
+                for (j = 0, jz = expr.expressions.length; j < jz; ++j) {
+                    result.push(expr.expressions[j]);
                 }
+            } else {
+                result.push(expr);
             }
         }
-        return false;
+        node.expressions = result;
     }
 
-    function reduceBranchJump(tree, options) {
+    function reduceSequenceExpression(tree, options) {
         var result;
 
         if (options == null) {
@@ -98,33 +91,14 @@
         if (options.destructive) {
             result = tree;
         } else {
-            result = common.deepCopy(tree);
+            result = deepCopy(tree);
         }
 
         modified = false;
-
-        common.traverse(result, {
+        traverse(result, {
             leave: function leave(node) {
-                var i;
-                switch (node.type) {
-                case Syntax.BlockStatement:
-                case Syntax.Program:
-                    i = 0;
-                    while (i < (node.body.length - 1)) {
-                        if (!reduce(node.body, i)) {
-                            ++i;
-                        }
-                    }
-                    break;
-
-                case Syntax.SwitchCase:
-                    i = 0;
-                    while (i < (node.consequent.length - 1)) {
-                        if (!reduce(node.consequent, i)) {
-                            ++i;
-                        }
-                    }
-                    break;
+                if (node.type === Syntax.SequenceExpression) {
+                    reduce(node);
                 }
             }
         });
@@ -135,7 +109,7 @@
         };
     }
 
-    reduceBranchJump.passName = 'reduce-branch-jump';
-    return reduceBranchJump;
+    reduceSequenceExpression.passName = 'reduce-sequence-expression';
+    return reduceSequenceExpression;
 }, this));
 /* vim: set sw=4 ts=4 et tw=80 : */
