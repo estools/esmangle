@@ -49,9 +49,9 @@ passes = [
 ];
 
 post = [
+    esmangle.require('lib/post/transform-static-to-dynamic-property-access'),
     esmangle.require('lib/post/rewrite-boolean'),
-    esmangle.require('lib/post/rewrite-conditional-expression'),
-    esmangle.require('lib/post/transform-dynamic-to-static-property-access'),
+    esmangle.require('lib/post/rewrite-conditional-expression')
 ];
 
 if (files.length === 0) {
