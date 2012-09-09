@@ -1,0 +1,4 @@
+(function() {
+    throw 'test';
+    test();
+}());
