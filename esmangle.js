@@ -840,6 +840,57 @@
         return result;
     }
 
+    // recover some broken AST
+
+    function recover(tree) {
+        function trailingIf(node) {
+            while (true) {
+                switch (node.type) {
+                case Syntax.IfStatement:
+                    if (!node.alternate) {
+                        return true;
+                    }
+                    node = node.alternate;
+                    continue;
+
+                case Syntax.LabeledStatement:
+                case Syntax.ForStatement:
+                case Syntax.ForInStatement:
+                case Syntax.WhileStatement:
+                case Syntax.WithStatement:
+                    node = node.body;
+                    continue;
+                }
+                return false;
+            }
+        }
+
+        function wrap(node) {
+            if (node.type === Syntax.BlockStatement) {
+                return node;
+            }
+
+            if (trailingIf(node)) {
+                return {
+                    type: Syntax.BlockStatement,
+                    body: [ node ]
+                };
+            }
+            return node;
+        }
+
+        traverse(tree, {
+            leave: function leave(node) {
+                if (node.type === Syntax.IfStatement && node.alternate) {
+                    // force wrap up or not
+                    node.consequent = wrap(node.consequent);
+                }
+            }
+        });
+
+        return tree;
+    }
+
     function optimize(tree, p, options) {
         var i, iz, pass, res, changed, statuses, passes, result;
 
@@ -900,7 +951,8 @@
                 }
             }
         } while (changed);
-        return result;
+
+        return recover(result);
     }
 
     exports.version = VERSION;
