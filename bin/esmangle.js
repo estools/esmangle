@@ -45,7 +45,8 @@ passes = [
     esmangle.require('lib/pass/transform-to-sequence-expression'),
     esmangle.require('lib/pass/transform-branch-to-expression'),
     esmangle.require('lib/pass/reduce-sequence-expression'),
-    esmangle.require('lib/pass/reduce-branch-jump')
+    esmangle.require('lib/pass/reduce-branch-jump'),
+    esmangle.require('lib/pass/dead-code-elimination')
 ];
 
 post = [
