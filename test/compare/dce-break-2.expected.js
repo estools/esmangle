@@ -1,1 +1,1 @@
-(function(){label:break label;ok()}())
+(function(){ok()}())
