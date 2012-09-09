@@ -1,0 +1,2 @@
+throw 'test';
+ng();
