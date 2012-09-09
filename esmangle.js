@@ -305,7 +305,6 @@
             (block.type === 'WithStatement') ? 'with' :
             (block.type === 'Program') ? 'global' : 'function';
         this.set = {};
-        this.names = [];
         this.tip = 'a';
         this.dynamic = this.type === 'global' || this.type === 'with';
         this.block = block;
