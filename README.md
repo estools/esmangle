@@ -28,9 +28,16 @@ Or you can simply use this `esmangle` command in the shell.
 Get more compressed result: (in Node.js)
 
     var ast = esprima.parse(code);
+
     // You can add your original pass
     // See lib/pass/*.js for pass function format
     var passes = [
+        // transform dynamic to static property access
+        esmangle.require('lib/pass/transform-dynamic-to-static-property-access'),
+
+        // reordering function declaration
+        esmangle.require('lib/pass/reordering-function-declarations'),
+
         // remove unused label
         esmangle.require('lib/pass/remove-unused-label'),
 
@@ -46,14 +53,32 @@ Get more compressed result: (in Node.js)
         // transform branch to expression
         esmangle.require('lib/pass/transform-branch-to-expression'),
 
+        // reduce sequence expression
+        esmangle.require('lib/pass/reduce-sequence-expression'),
+
         // reduce branch jump
-        esmangle.require('lib/pass/reduce-branch-jump')
+        esmangle.require('lib/pass/reduce-branch-jump'),
+
+        // dead code elimination
+        esmangle.require('lib/pass/dead-code-elimination')
+    ];
+
+    // And you can add original post processes
+    var post = [
+        esmangle.require('lib/post/transform-static-to-dynamic-property-access'),
+        esmangle.require('lib/post/rewrite-boolean'),
+        esmangle.require('lib/post/rewrite-conditional-expression')
     ];
 
     // Get optimized AST
     var optimized = esmangle.optimize(ast, passes);
-    var result = esmangle.mangle(optimized);  // gets mangled AST
-    console.log(escodegen.generate(tree, {
+    optimized = post.reduce(function (tree, p) {
+        return p(tree);
+    }, optimized);
+
+    // gets mangled AST
+    var result = esmangle.mangle(optimized);
+    console.log(escodegen.generate(result, {
         format: {
             renumber: true,
             hexadecimal: true,
@@ -62,7 +87,7 @@ Get more compressed result: (in Node.js)
             semicolons: false,
             parentheses: false
         }
-    }));
+    }));  // dump AST
 
 ### Note
 
