@@ -42,6 +42,7 @@ passes = [
     esmangle.require('lib/pass/remove-unused-label'),
     esmangle.require('lib/pass/remove-empty-statement'),
     esmangle.require('lib/pass/remove-wasted-blocks'),
+    esmangle.require('lib/pass/transform-to-compound-assignment'),
     esmangle.require('lib/pass/transform-to-sequence-expression'),
     esmangle.require('lib/pass/transform-branch-to-expression'),
     esmangle.require('lib/pass/reduce-sequence-expression'),
