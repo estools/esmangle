@@ -1,0 +1,3 @@
+for (;;) {
+    if (cond) continue;
+}
