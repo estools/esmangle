@@ -30,8 +30,9 @@ var fs = require('fs'),
     root = path.join(path.dirname(fs.realpathSync(__filename)), '..'),
     esprima = require('esprima'),
     escodegen = require('escodegen'),
+    optimist = require('optimist'),
     esmangle,
-    files = process.argv.splice(2),
+    argv,
     post,
     passes;
 
@@ -50,22 +51,18 @@ passes = [
     esmangle.require('lib/pass/dead-code-elimination')
 ];
 
+argv = optimist.usage("Usage: $0 file").describe('source-map', 'dump source-map').demand(1).argv;
+
 post = [
     esmangle.require('lib/post/transform-static-to-dynamic-property-access'),
     esmangle.require('lib/post/rewrite-boolean'),
     esmangle.require('lib/post/rewrite-conditional-expression')
 ];
 
-if (files.length === 0) {
-    console.log('Usage:');
-    console.log('   esmangle file.js');
-    process.exit(1);
-}
-
-files.forEach(function (filename) {
+argv._.forEach(function (filename) {
     var content, tree;
     content = fs.readFileSync(filename, 'utf-8');
-    tree = esprima.parse(content);
+    tree = esprima.parse(content, { loc: true });
     tree = esmangle.optimize(tree, passes, {
         destructive: true
     });
@@ -75,15 +72,29 @@ files.forEach(function (filename) {
     tree = esmangle.mangle(tree, {
         destructive: true
     });
-    console.log(escodegen.generate(tree, {
-        format: {
-            renumber: true,
-            hexadecimal: true,
-            escapeless: true,
-            compact: true,
-            semicolons: false,
-            parentheses: false
-        }
-    }));
+    if (argv.hasOwnProperty('source-map')) {
+        console.log(escodegen.generate(tree, {
+            format: {
+                renumber: true,
+                hexadecimal: true,
+                escapeless: true,
+                compact: true,
+                semicolons: false,
+                parentheses: false,
+            },
+            sourceMap: filename
+        }));
+    } else {
+        console.log(escodegen.generate(tree, {
+            format: {
+                renumber: true,
+                hexadecimal: true,
+                escapeless: true,
+                compact: true,
+                semicolons: false,
+                parentheses: false
+            }
+        }));
+    }
 });
 /* vim: set sw=4 ts=4 et tw=80 : */

@@ -24,7 +24,9 @@
     },
     "dependencies": {
         "esprima": ">= 0.9.9",
-        "escodegen": ">= 0.0.6"
+        "escodegen": ">= 0.0.6",
+        "source-map": ">= 0.1.2",
+        "optimist": "*"
     },
     "devDependencies": {
         "mocha": "*",
