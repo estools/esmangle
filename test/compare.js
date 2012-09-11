@@ -32,11 +32,11 @@ var fs = require('fs'),
     esmangle,
     chai = require('chai'),
     expect = chai.expect,
-    passes,
-    post;
+    defaultPass,
+    defaultPost;
 
 esmangle = require(path.join(root, 'esmangle'));
-passes = [
+defaultPass = [
     esmangle.require('lib/pass/transform-dynamic-to-static-property-access'),
     esmangle.require('lib/pass/reordering-function-declarations'),
     esmangle.require('lib/pass/remove-unused-label'),
@@ -50,7 +50,7 @@ passes = [
     esmangle.require('lib/pass/dead-code-elimination')
 ];
 
-post = [
+defaultPost = [
     esmangle.require('lib/post/transform-static-to-dynamic-property-access'),
     esmangle.require('lib/post/rewrite-boolean'),
     esmangle.require('lib/post/rewrite-conditional-expression')
@@ -65,9 +65,39 @@ describe('compare mangling result', function () {
                 code = fs.readFileSync(__dirname + '/compare/' + file, 'utf-8');
                 expected = fs.readFileSync(__dirname + '/compare/' + p, 'utf-8').trim();
                 it(p, function () {
-                    var tree, actual;
-                    tree = esprima.parse(code);
-                    tree = esmangle.optimize(tree, passes);
+                    var tree, actual, config, post, pass;
+
+                    tree = esprima.parse(code, { comment: true });
+
+                    tree.comments.some(function (comment) {
+                        var parsed;
+                        try {
+                            parsed = JSON.parse(comment.value.trim());
+                            if (typeof parsed === 'object' && parsed !== null) {
+                                config = parsed
+                                return true;
+                            }
+                        } catch (e) { }
+                        return false;
+                    });
+
+                    if (config && config.pass) {
+                        pass = config.pass.map(function (name) {
+                            return esmangle.require('lib/pass/' + name);
+                        });
+                    } else {
+                        pass = defaultPass;
+                    }
+
+                    if (config && config.post) {
+                        post = config.post.map(function (name) {
+                            return esmangle.require('lib/post/' + name);
+                        });
+                    } else {
+                        post = defaultPost;
+                    }
+
+                    tree = esmangle.optimize(tree, pass);
                     tree = post.reduce(function (tree, p) {
                         return p(tree);
                     }, tree);

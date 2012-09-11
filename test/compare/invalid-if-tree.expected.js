@@ -1,1 +1,1 @@
-cond?test&&!0:!1
+if(cond){if(test)!0}else!1
