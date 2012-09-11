@@ -1,0 +1,4 @@
+if (cond) {
+    ok();
+} else {
+}
