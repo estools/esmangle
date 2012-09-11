@@ -65,37 +65,28 @@ describe('compare mangling result', function () {
                 code = fs.readFileSync(__dirname + '/compare/' + file, 'utf-8');
                 expected = fs.readFileSync(__dirname + '/compare/' + p, 'utf-8').trim();
                 it(p, function () {
-                    var tree, actual, config, post, pass;
+                    var tree, actual, pass, post;
 
                     tree = esprima.parse(code, { comment: true });
 
+                    pass = defaultPass;
+                    post = defaultPost;
                     tree.comments.some(function (comment) {
                         var parsed;
                         try {
                             parsed = JSON.parse(comment.value.trim());
                             if (typeof parsed === 'object' && parsed !== null) {
-                                config = parsed
+                                pass = parsed.pass ? parsed.pass.map(function (name) {
+                                    return esmangle.require('lib/pass/' + name);
+                                }) : [];
+                                post = parsed.post ? parsed.post.map(function (name) {
+                                    return esmangle.require('lib/post/' + name);
+                                }) : [];
                                 return true;
                             }
                         } catch (e) { }
                         return false;
                     });
-
-                    if (config && config.pass) {
-                        pass = config.pass.map(function (name) {
-                            return esmangle.require('lib/pass/' + name);
-                        });
-                    } else {
-                        pass = defaultPass;
-                    }
-
-                    if (config && config.post) {
-                        post = config.post.map(function (name) {
-                            return esmangle.require('lib/post/' + name);
-                        });
-                    } else {
-                        post = defaultPost;
-                    }
 
                     tree = esmangle.optimize(tree, pass);
                     tree = post.reduce(function (tree, p) {
