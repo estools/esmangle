@@ -1,1 +1,1 @@
-stmt,stmt2
+stmt;stmt2

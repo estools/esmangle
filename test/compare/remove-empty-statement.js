@@ -1,0 +1,6 @@
+/*{
+    "pass": [
+        "remove-empty-statement"
+    ]
+}*/
+;;;;
