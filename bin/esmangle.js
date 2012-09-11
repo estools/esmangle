@@ -75,29 +75,16 @@ argv._.forEach(function (filename) {
     tree = esmangle.mangle(tree, {
         destructive: true
     });
-    if (argv['source-map']) {
-        console.log(escodegen.generate(tree, {
-            format: {
-                renumber: true,
-                hexadecimal: true,
-                escapeless: true,
-                compact: true,
-                semicolons: false,
-                parentheses: false
-            },
-            sourceMap: filename
-        }));
-    } else {
-        console.log(escodegen.generate(tree, {
-            format: {
-                renumber: true,
-                hexadecimal: true,
-                escapeless: true,
-                compact: true,
-                semicolons: false,
-                parentheses: false
-            }
-        }));
-    }
+    console.log(escodegen.generate(tree, {
+        format: {
+            renumber: true,
+            hexadecimal: true,
+            escapeless: true,
+            compact: true,
+            semicolons: false,
+            parentheses: false
+        },
+        sourceMap: argv['source-map'] && filename
+    }));
 });
 /* vim: set sw=4 ts=4 et tw=80 : */
