@@ -51,7 +51,10 @@ passes = [
     esmangle.require('lib/pass/dead-code-elimination')
 ];
 
-argv = optimist.usage("Usage: $0 file").describe('source-map', 'dump source-map').demand(1).argv;
+argv = optimist.usage("Usage: $0 file")
+    .boolean('source-map')
+    .describe('source-map', 'dump source-map')
+    .demand(1).argv;
 
 post = [
     esmangle.require('lib/post/transform-static-to-dynamic-property-access'),
@@ -72,7 +75,7 @@ argv._.forEach(function (filename) {
     tree = esmangle.mangle(tree, {
         destructive: true
     });
-    if (argv.hasOwnProperty('source-map')) {
+    if (argv['source-map']) {
         console.log(escodegen.generate(tree, {
             format: {
                 renumber: true,
@@ -80,7 +83,7 @@ argv._.forEach(function (filename) {
                 escapeless: true,
                 compact: true,
                 semicolons: false,
-                parentheses: false,
+                parentheses: false
             },
             sourceMap: filename
         }));
