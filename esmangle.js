@@ -286,7 +286,7 @@
     };
 
     Scope.isRequired = function isRequired(node) {
-        return node.type === 'Program' || node.type === 'FunctionExpression' || node.type === 'FunctionDeclaration' || node.type === 'WithStatement' || node.type === 'CatchClause';
+        return node.type === Syntax.Program || node.type === Syntax.FunctionExpression || node.type === Syntax.FunctionDeclaration || node.type === Syntax.WithStatement || node.type === Syntax.CatchClause;
     };
 
     // simple visitor implementation
