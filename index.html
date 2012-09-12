@@ -22,23 +22,23 @@
     <script src="javascripts/codemirror/javascript.js"></script>
     <script src="javascripts/esprima.js"></script>
     <script src="javascripts/escodegen.js"></script>
-    <script src="javascripts/esmangle.js"></script>
-    <script src="javascripts/esmangle/common.js"></script>
-    <script src="javascripts/esmangle/pass/transform-dynamic-to-static-property-access.js"></script>
-    <script src="javascripts/esmangle/pass/reordering-function-declarations.js"></script>
-    <script src="javascripts/esmangle/pass/remove-unused-label.js"></script>
-    <script src="javascripts/esmangle/pass/remove-empty-statement.js"></script>
-    <script src="javascripts/esmangle/pass/remove-wasted-blocks.js"></script>
-    <script src="javascripts/esmangle/pass/transform-to-compound-assignment.js"></script>
-    <script src="javascripts/esmangle/pass/transform-to-sequence-expression.js"></script>
-    <script src="javascripts/esmangle/pass/transform-branch-to-expression.js"></script>
-    <script src="javascripts/esmangle/pass/reduce-sequence-expression.js"></script>
-    <script src="javascripts/esmangle/pass/reduce-branch-jump.js"></script>
-    <script src="javascripts/esmangle/pass/reduce-multiple-if-statements.js"></script>
-    <script src="javascripts/esmangle/pass/dead-code-elimination.js"></script>
-    <script src="javascripts/esmangle/post/rewrite-boolean.js"></script>
-    <script src="javascripts/esmangle/post/rewrite-conditional-expression.js"></script>
-    <script src="javascripts/esmangle/post/transform-static-to-dynamic-property-access.js"></script>
+    <script src="javascripts/esmangle/lib/common.js"></script>
+    <script src="javascripts/esmangle/esmangle.js"></script>
+    <script src="javascripts/esmangle/lib/pass/transform-dynamic-to-static-property-access.js"></script>
+    <script src="javascripts/esmangle/lib/pass/reordering-function-declarations.js"></script>
+    <script src="javascripts/esmangle/lib/pass/remove-unused-label.js"></script>
+    <script src="javascripts/esmangle/lib/pass/remove-empty-statement.js"></script>
+    <script src="javascripts/esmangle/lib/pass/remove-wasted-blocks.js"></script>
+    <script src="javascripts/esmangle/lib/pass/transform-to-compound-assignment.js"></script>
+    <script src="javascripts/esmangle/lib/pass/transform-to-sequence-expression.js"></script>
+    <script src="javascripts/esmangle/lib/pass/transform-branch-to-expression.js"></script>
+    <script src="javascripts/esmangle/lib/pass/reduce-sequence-expression.js"></script>
+    <script src="javascripts/esmangle/lib/pass/reduce-branch-jump.js"></script>
+    <script src="javascripts/esmangle/lib/pass/reduce-multiple-if-statements.js"></script>
+    <script src="javascripts/esmangle/lib/pass/dead-code-elimination.js"></script>
+    <script src="javascripts/esmangle/lib/post/rewrite-boolean.js"></script>
+    <script src="javascripts/esmangle/lib/post/rewrite-conditional-expression.js"></script>
+    <script src="javascripts/esmangle/lib/post/transform-static-to-dynamic-property-access.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <style type="text/css">
 .CodeMirror pre {
@@ -69,7 +69,8 @@ href="https://developer.mozilla.org/en/SpiderMonkey/Parser_API">Mozilla Parser A
 
 <p>esmangle can be used in a web browser:</p>
 
-<pre><code>&lt;script src="esmangle.js"&gt;&lt;/script&gt;
+<pre><code>&lt;script src="esmangle/lib/common.js"&gt;&lt;/script&gt;
+&lt;script src="esmangle/esmangle.js"&gt;&lt;/script&gt;
 </code></pre>
 
 <p>or in a Node.js application via the package manager:</p>

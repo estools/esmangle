@@ -60,7 +60,9 @@
         Regex,
         isArray,
         VisitorOption,
-        VisitorKeys;
+        VisitorKeys,
+        NameSequence,
+        ZeroSequenceCache;
 
     Syntax = {
         AssignmentExpression: 'AssignmentExpression',
@@ -116,6 +118,18 @@
         isArray = function isArray(array) {
             return Object.prototype.toString.call(array) === '[object Array]';
         };
+    }
+
+    function stringRepeat(str, num) {
+        var result = '';
+
+        for (num |= 0; num > 0; num >>>= 1, str += str) {
+            if (num & 1) {
+                result += str;
+            }
+        }
+
+        return result;
     }
 
     function deepCopy(obj) {
@@ -419,8 +433,38 @@
         return node;
     }
 
+    ZeroSequenceCache = [];
+
+    function zeroSequence(num) {
+        var res = ZeroSequenceCache[num];
+        if (res !== undefined) {
+            return res;
+        }
+        res = stringRepeat('0', num);
+        ZeroSequenceCache[num] = res;
+        return res;
+    }
+
+    NameSequence = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_$'.split('');
+
+    function generateNextName(name) {
+        var ch, index, cur;
+
+        cur = name.length - 1;
+        do {
+            ch = name.charAt(cur);
+            index = NameSequence.indexOf(ch);
+            if (index !== (NameSequence.length - 1)) {
+                return name.substring(0, cur) + NameSequence[index + 1] + zeroSequence(name.length - (cur + 1));
+            }
+            --cur;
+        } while (cur >= 0);
+        return 'a' + zeroSequence(name.length);
+    }
+
     exports.deepCopy = deepCopy;
     exports.isArray = isArray;
+    exports.stringRepeat = stringRepeat;
     exports.Syntax = Syntax;
 
     exports.traverse = traverse;
@@ -440,8 +484,11 @@
     exports.isLineTerminator= isLineTerminator;
     exports.isIdentifierStart = isIdentifierStart;
     exports.isIdentifierPart = isIdentifierPart;
+
     exports.moveLocation = moveLocation;
     exports.deleteLocation = deleteLocation;
     exports.convertToEmptyStatement = convertToEmptyStatement;
+
+    exports.generateNextName = generateNextName;
 }, this));
 /* vim: set sw=4 ts=4 et tw=80 : */
