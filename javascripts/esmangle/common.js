@@ -409,6 +409,16 @@
         return false;
     }
 
+    function convertToEmptyStatement(node) {
+        var i, iz, keys;
+        keys = VisitorKeys[node.type];
+        for (i = 0, iz = keys.length; i < iz; ++i) {
+            delete node[keys[i]];
+        }
+        node.type = Syntax.EmptyStatement;
+        return node;
+    }
+
     exports.deepCopy = deepCopy;
     exports.isArray = isArray;
     exports.Syntax = Syntax;
@@ -432,5 +442,6 @@
     exports.isIdentifierPart = isIdentifierPart;
     exports.moveLocation = moveLocation;
     exports.deleteLocation = deleteLocation;
+    exports.convertToEmptyStatement = convertToEmptyStatement;
 }, this));
 /* vim: set sw=4 ts=4 et tw=80 : */

@@ -46,84 +46,73 @@
     // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
     // and plain browser loading,
     if (typeof define === 'function' && define.amd) {
-        define('esmangle/pass/remove-empty-statement', ['module', 'esmangle/common'], function(module, common) {
+        define('esmangle/pass/transform-to-compound-assignment', ['module', 'esmangle/common'], function(module, common) {
             module.exports = factory(common);
         });
     } else if (typeof module !== 'undefined') {
         module.exports = factory(require('../common'));
     } else {
-        namespace('esmangle.pass', global).removeEmptyStatement = factory(namespace('esmangle.common', global));
+        namespace('esmangle.pass', global).transformToCompoundAssignment = factory(namespace('esmangle.common', global));
     }
 }(function (common) {
     'use strict';
 
-    var Syntax, modified;
+    var Syntax, scope, modified;
 
     Syntax = common.Syntax;
 
-    function remove(node, array) {
-        var i, iz, node, result;
-        result = [];
-        for (i = 0, iz = array.length; i < iz; ++i) {
-            node = array[i];
-            if (node.type === Syntax.EmptyStatement) {
-                modified = true;
-            } else {
-                result.push(array[i]);
-            }
+    function equals(lhs, rhs) {
+        if (lhs.type !== rhs.type) {
+            return false;
         }
-        return result;
+        if (lhs.type === Syntax.Identifier) {
+            return lhs.name === rhs.name;
+        }
+        return false;
     }
 
-    function removeAlternate(node) {
-        if (node.alternate) {
-            if (node.alternate.type === Syntax.EmptyStatement) {
-                modified = true;
-                node.alternate = null;
-            } else if (node.consequent.type === Syntax.EmptyStatement) {
-                modified = true;
-                node.consequent = node.alternate;
-                node.alternate = null;
-                node.test = common.moveLocation(node.test, {
-                    type: Syntax.UnaryExpression,
-                    operator: '!',
-                    argument: node.test
-                });
-            }
+    function compound(operator) {
+        switch (operator) {
+            case '*':
+            case '/':
+            case '%':
+            case '+':
+            case '-':
+            case '<<':
+            case '>>':
+            case '>>>':
+            case '&':
+            case '^':
+            case '|':
+                return operator + '=';
         }
+        return null;
     }
 
-    function removeEmptyStatement(tree, options) {
+    function transformToCompoundAssignment(tree, options) {
         var result;
 
         if (options == null) {
             options = { destructive: false };
         }
 
-        if (options.destructive) {
-            result = tree;
-        } else {
-            result = common.deepCopy(tree);
-        }
-
+        result = (options.destructive) ? tree : common.deepCopy(tree);
         modified = false;
 
         common.traverse(result, {
             enter: function enter(node) {
-                var i, iz;
-                switch (node.type) {
-                    case Syntax.BlockStatement:
-                    case Syntax.Program:
-                        node.body = remove(node, node.body);
-                        break;
-
-                    case Syntax.SwitchCase:
-                        node.consequent = remove(node, node.consequent);
-                        break;
-
-                    case Syntax.IfStatement:
-                        removeAlternate(node);
-                        break;
+                var left, right, operator;
+                if (node.type === Syntax.AssignmentExpression && node.operator === '=') {
+                    left = node.left;
+                    right = node.right;
+                    if (right.type === Syntax.BinaryExpression && equals(right.left, left)) {
+                        operator = compound(right.operator);
+                        if (operator) {
+                            modified = true;
+                            node.operator = operator;
+                            node.right = right.right;
+                        }
+                    }
                 }
             }
         });
@@ -134,7 +123,7 @@
         };
     }
 
-    removeEmptyStatement.passName = 'remove-empty-statement';
-    return removeEmptyStatement;
+    transformToCompoundAssignment.passName = 'transform-to-compound-assignment';
+    return transformToCompoundAssignment;
 }, this));
 /* vim: set sw=4 ts=4 et tw=80 : */

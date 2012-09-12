@@ -24,15 +24,17 @@
     <script src="javascripts/escodegen.js"></script>
     <script src="javascripts/esmangle.js"></script>
     <script src="javascripts/esmangle/common.js"></script>
+    <script src="javascripts/esmangle/pass/transform-dynamic-to-static-property-access.js"></script>
     <script src="javascripts/esmangle/pass/reordering-function-declarations.js"></script>
     <script src="javascripts/esmangle/pass/remove-unused-label.js"></script>
     <script src="javascripts/esmangle/pass/remove-empty-statement.js"></script>
     <script src="javascripts/esmangle/pass/remove-wasted-blocks.js"></script>
+    <script src="javascripts/esmangle/pass/transform-to-compound-assignment.js"></script>
     <script src="javascripts/esmangle/pass/transform-to-sequence-expression.js"></script>
     <script src="javascripts/esmangle/pass/transform-branch-to-expression.js"></script>
-    <script src="javascripts/esmangle/pass/transform-dynamic-to-static-property-access.js"></script>
     <script src="javascripts/esmangle/pass/reduce-sequence-expression.js"></script>
     <script src="javascripts/esmangle/pass/reduce-branch-jump.js"></script>
+    <script src="javascripts/esmangle/pass/reduce-multiple-if-statements.js"></script>
     <script src="javascripts/esmangle/pass/dead-code-elimination.js"></script>
     <script src="javascripts/esmangle/post/rewrite-boolean.js"></script>
     <script src="javascripts/esmangle/post/rewrite-conditional-expression.js"></script>
@@ -110,6 +112,9 @@ var passes = [
     // remove wasted blocks
     esmangle.require('lib/pass/remove-wasted-blocks'),
 
+    // transform to compound assignment
+    esmangle.require('lib/pass/transform-to-compound-assignment'),
+
     // transform to sequence expression
     esmangle.require('lib/pass/transform-to-sequence-expression'),
 
@@ -121,6 +126,9 @@ var passes = [
 
     // reduce branch jump
     esmangle.require('lib/pass/reduce-branch-jump'),
+
+    // reduce multiple if statements
+    esmangle.require('lib/pass/reduce-multiple-if-statements'),
 
     // dead code elimination
     esmangle.require('lib/pass/dead-code-elimination')
@@ -234,10 +242,12 @@ function minify() {
             esmangle.pass.removeUnusedLabel,
             esmangle.pass.removeEmptyStatement,
             esmangle.pass.removeWastedBlocks,
+            esmangle.pass.transformToCompoundAssignment,
             esmangle.pass.transformToSequenceExpression,
             esmangle.pass.transformBranchToExpression,
             esmangle.pass.reduceSequenceExpression,
             esmangle.pass.reduceBranchJump,
+            esmangle.pass.reduceMultipleIfStatements,
             esmangle.pass.deadCodeElimination
         ];
 

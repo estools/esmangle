@@ -118,6 +118,13 @@
                             right: node.consequent.expression
                         })
                     });
+                } else if (node.consequent.type === Syntax.EmptyStatement) {
+                    // ok, we can reconstruct this to expression statement
+                    modified = true;
+                    return common.moveLocation(node, {
+                        type: Syntax.ExpressionStatement,
+                        expression: node.test
+                    });
                 }
             }
         }

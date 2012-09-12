@@ -68,6 +68,7 @@
         }
         // empty body
         if (node.type === Syntax.BlockStatement && node.body.length === 0) {
+            modified = true;
             return {
                 type: Syntax.EmptyStatement
             };

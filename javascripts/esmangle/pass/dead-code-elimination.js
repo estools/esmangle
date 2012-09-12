@@ -23,7 +23,7 @@
 */
 
 /*jslint bitwise:true */
-/*global esmangle:true, module:true, define:true, require:true*/
+/*global esmangle:true, module:true, define:true, require:true, visitLoopBody:true*/
 (function (factory, global) {
     'use strict';
 
@@ -88,7 +88,7 @@
 
     Jumps.prototype.lookupContinuableTarget = function lookupContinuableTarget(label) {
         var i, iz, target;
-        for (i = 0, iz = this.targets.length; i < iz; ++i) {
+        for (i = this.targets.length - 1; i >= 0; --i) {
             target = this.targets[i];
             if (target.isIteration() && (!label || target.contains(label.name))) {
                 return target.node;
@@ -99,7 +99,7 @@
 
     Jumps.prototype.lookupBreakableTarget = function lookupBreakableTarget(label) {
         var i, iz, target;
-        for (i = 0, iz = this.targets.length; i < iz; ++i) {
+        for (i = this.targets.length - 1; i >= 0; --i) {
             target = this.targets[i];
             if (label) {
                 if (target.contains(label.name)) {
@@ -328,9 +328,8 @@
                     // we treat as like empty statement
                     if (node.label && status.labels && status.labels.indexOf(node.label)) {
                         // change this statement to empty statement
-                        node.type = Syntax.EmptyStatement;
-                        delete node.label;
                         modified = true;
+                        common.convertToEmptyStatement(node);
                     } else {
                         status.jumpTo(status.jumps.lookupBreakableTarget(node.label));
                     }
@@ -346,7 +345,7 @@
 
                 case Syntax.DoWhileStatement:
                     status.jumps.push(new JumpTarget(node, status, JumpTarget.ITERATION));
-                    live |= visit(node.body);
+                    live |= visitLoopBody(node, node.body);
                     status.jumps.pop();
 
                     live |= visit(node.test);
@@ -368,7 +367,7 @@
                     live |= visit(node.test);
 
                     status.jumps.push(new JumpTarget(node, status, JumpTarget.ITERATION));
-                    live |= visit(node.body);
+                    live |= visitLoopBody(node, node.body);
                     status.jumps.pop();
 
                     live |= visit(node.update);
@@ -381,7 +380,7 @@
                     live |= visit(node.right);
 
                     status.jumps.push(new JumpTarget(node, status, JumpTarget.ITERATION));
-                    live |= visit(node.body);
+                    live |= visitLoopBody(node, node.body);
                     status.jumps.pop();
 
                     status.resolveJump(node);
@@ -483,7 +482,7 @@
                     live |= visit(node.test);
 
                     status.jumps.push(new JumpTarget(node, status, JumpTarget.ITERATION));
-                    live |= visit(node.body);
+                    live |= visitLoopBody(node, node.body);
                     status.jumps.pop();
 
                     status.resolveJump(node);
@@ -513,6 +512,48 @@
         });
 
         return live;
+    }
+
+    function getForwardLastNode(node) {
+        while (true) {
+            switch (node.type) {
+            case Syntax.IfStatement:
+                if (node.alternate) {
+                    return null;
+                }
+                node = node.consequent;
+                continue;
+
+            case Syntax.WithStatement:
+            case Syntax.LabeledStatement:
+                node = node.body;
+                continue;
+
+            case Syntax.BlockStatement:
+                if (node.body.length) {
+                    node = node.body[node.body.length - 1];
+                    continue;
+                }
+                break;
+            }
+            return node;
+        }
+    }
+
+    function visitLoopBody(loop, body) {
+        var jump, last;
+        last = getForwardLastNode(body);
+        if (last) {
+            if (last.type === Syntax.ContinueStatement) {
+                jump = status.jumps.lookupContinuableTarget(last.label);
+                if (jump === loop) {
+                    // this continue is dead code
+                    modified = true;
+                    common.convertToEmptyStatement(last);
+                }
+            }
+        }
+        return visit(body);
     }
 
     // This is iv / lv5 / railgun bytecode compiler dead code elimination algorithm

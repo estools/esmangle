@@ -27,8 +27,6 @@
 (function (factory, global) {
     'use strict';
 
-    var ex;
-
     function namespace(str, obj) {
         var i, iz, names, name;
         names = str.split('.');
@@ -46,13 +44,13 @@
     // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
     // and plain browser loading,
     if (typeof define === 'function' && define.amd) {
-        define('esmangle/pass/remove-empty-statement', ['module', 'esmangle/common'], function(module, common) {
+        define('esmangle/pass/reduce-multiple-if-statements', ['module', 'esmangle/common'], function(module, common) {
             module.exports = factory(common);
         });
     } else if (typeof module !== 'undefined') {
         module.exports = factory(require('../common'));
     } else {
-        namespace('esmangle.pass', global).removeEmptyStatement = factory(namespace('esmangle.common', global));
+        namespace('esmangle.pass', global).reduceMultipleIfStatements = factory(namespace('esmangle.common', global));
     }
 }(function (common) {
     'use strict';
@@ -61,69 +59,38 @@
 
     Syntax = common.Syntax;
 
-    function remove(node, array) {
-        var i, iz, node, result;
-        result = [];
-        for (i = 0, iz = array.length; i < iz; ++i) {
-            node = array[i];
-            if (node.type === Syntax.EmptyStatement) {
-                modified = true;
-            } else {
-                result.push(array[i]);
-            }
-        }
-        return result;
-    }
-
-    function removeAlternate(node) {
-        if (node.alternate) {
-            if (node.alternate.type === Syntax.EmptyStatement) {
-                modified = true;
-                node.alternate = null;
-            } else if (node.consequent.type === Syntax.EmptyStatement) {
-                modified = true;
-                node.consequent = node.alternate;
-                node.alternate = null;
-                node.test = common.moveLocation(node.test, {
-                    type: Syntax.UnaryExpression,
-                    operator: '!',
-                    argument: node.test
-                });
-            }
-        }
-    }
-
-    function removeEmptyStatement(tree, options) {
+    function reduceMultipleIfStatements(tree, options) {
         var result;
 
         if (options == null) {
             options = { destructive: false };
         }
 
-        if (options.destructive) {
-            result = tree;
-        } else {
-            result = common.deepCopy(tree);
-        }
-
+        result = (options.destructive) ? tree : common.deepCopy(tree);
         modified = false;
 
         common.traverse(result, {
-            enter: function enter(node) {
-                var i, iz;
-                switch (node.type) {
-                    case Syntax.BlockStatement:
-                    case Syntax.Program:
-                        node.body = remove(node, node.body);
-                        break;
-
-                    case Syntax.SwitchCase:
-                        node.consequent = remove(node, node.consequent);
-                        break;
-
-                    case Syntax.IfStatement:
-                        removeAlternate(node);
-                        break;
+            leave: function leave(node) {
+                // reduce
+                //     if (cond) {
+                //         if (cond2) {
+                //             ...
+                //         }
+                //     }
+                // to
+                //     if (cond && cond2) {
+                //         ...
+                //     }
+                if (node.type === Syntax.IfStatement && !node.alternate &&
+                    node.consequent.type === Syntax.IfStatement && !node.consequent.alternate) {
+                    modified = true;
+                    node.test = {
+                        type: Syntax.LogicalExpression,
+                        operator: '&&',
+                        left: node.test,
+                        right: node.consequent.test
+                    };
+                    node.consequent = node.consequent.consequent;
                 }
             }
         });
@@ -134,7 +101,7 @@
         };
     }
 
-    removeEmptyStatement.passName = 'remove-empty-statement';
-    return removeEmptyStatement;
+    reduceMultipleIfStatements.passName = 'reduce-multiple-if-statements';
+    return reduceMultipleIfStatements;
 }, this));
 /* vim: set sw=4 ts=4 et tw=80 : */
