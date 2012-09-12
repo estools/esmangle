@@ -4,12 +4,7 @@ mangler / minifier for [Parser API](https://developer.mozilla.org/en/SpiderMonke
 
 ### Install
 
-esmangle can be used in a web browser:
-
-    <script src="esmangle/common.js"></script>
-    <script src="esmangle.js"></script>
-
-or in a Node.js application via the package manager:
+Node.js application via the package manager:
 
     npm install esmangle
 
