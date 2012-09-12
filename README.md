@@ -47,6 +47,9 @@ Get more compressed result: (in Node.js)
         // remove wasted blocks
         esmangle.require('lib/pass/remove-wasted-blocks'),
 
+        // transform to compound assignment
+        esmangle.require('lib/pass/transform-to-compound-assignment'),
+
         // transform to sequence expression
         esmangle.require('lib/pass/transform-to-sequence-expression'),
 
@@ -58,6 +61,9 @@ Get more compressed result: (in Node.js)
 
         // reduce branch jump
         esmangle.require('lib/pass/reduce-branch-jump'),
+
+        // reduce multiple if statements
+        esmangle.require('lib/pass/reduce-multiple-if-statements'),
 
         // dead code elimination
         esmangle.require('lib/pass/dead-code-elimination')
