@@ -33,8 +33,10 @@ var fs = require('fs'),
     chai = require('chai'),
     expect = chai.expect,
     defaultPass,
-    defaultPost;
+    defaultPost,
+    existsSync;
 
+existsSync = fs.existsSync || path.existsSync;
 esmangle = require(path.join(root, 'esmangle'));
 defaultPass = [
     esmangle.require('lib/pass/transform-dynamic-to-static-property-access'),
@@ -59,15 +61,21 @@ defaultPost = [
 
 describe('compare mangling result', function () {
     fs.readdirSync(__dirname + '/compare').sort().forEach(function(file) {
-        var code, expected, p;
+        var p;
         if (/\.js$/.test(file)) {
             if (!/expected\.js$/.test(file)) {
                 p = file.replace(/\.js$/, '.expected.js');
-                code = fs.readFileSync(__dirname + '/compare/' + file, 'utf-8');
-                expected = fs.readFileSync(__dirname + '/compare/' + p, 'utf-8').trim();
-                it(p, function () {
-                    var tree, actual, pass, post;
+                it(file, function () {
+                    var codeName, code, expectedName, expected, tree, actual, pass, post;
 
+                    codeName = __dirname + '/compare/' + file;
+                    expectedName = __dirname + '/compare/' + p;
+
+                    expect(existsSync(codeName)).to.be.true;
+                    expect(existsSync(expectedName)).to.be.true;
+
+                    code = fs.readFileSync(codeName, 'utf-8');
+                    expected = fs.readFileSync(expectedName, 'utf-8').trim();
                     tree = esprima.parse(code, { comment: true });
 
                     pass = defaultPass;
