@@ -97,10 +97,7 @@ describe('compare mangling result', function () {
                         return false;
                     });
 
-                    tree = esmangle.optimize(tree, pass);
-                    tree = post.reduce(function (tree, p) {
-                        return p(tree);
-                    }, tree);
+                    tree = esmangle.optimize(tree, [ pass, { once: true, pass: post } ]);
                     tree = esmangle.mangle(tree, {
                         destructive: true
                     });

@@ -207,7 +207,7 @@
         return tree;
     }
 
-    function optimize(tree, p, options) {
+    function iteration(tree, p, options) {
         var i, iz, pass, res, changed, statuses, passes, result;
 
         function addPass(pass) {
@@ -264,7 +264,26 @@
             }
         } while (changed);
 
-        return recover(result);
+        return result;
+    }
+
+    function optimize(tree, pipeline, options) {
+        var i, iz, j, jz, section, pass;
+
+        for (i = 0, iz = pipeline.length; i < iz; ++i) {
+            section = pipeline[i];
+            // simple iterative pass
+            if (common.isArray(section)) {
+                tree = iteration(tree, section, options);
+            } else if (section.once) {
+                pass = section.pass;
+                for (j = 0, jz = pass.length; j < jz; ++j) {
+                    tree = pass[j](tree, options).result;
+                }
+            }
+        }
+
+        return recover(tree);
     }
 
     exports.version = VERSION;
