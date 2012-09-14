@@ -181,25 +181,18 @@
             }
         }
 
-        function wrap(node) {
-            if (node.type === Syntax.BlockStatement) {
-                return node;
-            }
-
-            if (trailingIf(node)) {
-                return {
-                    type: Syntax.BlockStatement,
-                    body: [ node ]
-                };
-            }
-            return node;
-        }
-
         common.traverse(tree, {
             leave: function leave(node) {
                 if (node.type === Syntax.IfStatement && node.alternate) {
                     // force wrap up or not
-                    node.consequent = wrap(node.consequent);
+                    if (node.consequent.type !== Syntax.BlockStatement) {
+                        if (trailingIf(node.consequent)) {
+                            node.consequent = {
+                                type: Syntax.BlockStatement,
+                                body: [ node.consequent ]
+                            };
+                        }
+                    }
                 }
             }
         });
