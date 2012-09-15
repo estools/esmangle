@@ -1,3 +1,10 @@
+/*{
+    "pass": [
+        "dead-code-elimination",
+        "remove-wasted-blocks",
+        "transform-to-sequence-expression"
+    ]
+}*/
 (function () {
   var cake
   if (noFreeCakes) return /* I would

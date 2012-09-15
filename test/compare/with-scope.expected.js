@@ -1,1 +1,1 @@
-(function(){var a=0;a;var test=20;with(obj)test}())
+(function(a,test){a=0,a,test=20;with(obj)test}())

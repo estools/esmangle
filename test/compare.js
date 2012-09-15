@@ -39,6 +39,7 @@ var fs = require('fs'),
 existsSync = fs.existsSync || path.existsSync;
 esmangle = require(path.join(root, 'esmangle'));
 defaultPass = [
+    esmangle.require('lib/pass/hoist-variable-to-arguments'),
     esmangle.require('lib/pass/transform-dynamic-to-static-property-access'),
     esmangle.require('lib/pass/reordering-function-declarations'),
     esmangle.require('lib/pass/remove-unused-label'),
