@@ -72,7 +72,7 @@
         if (common.isKeyword(name) || common.isRestrictedWord(name)) {
             return false;
         }
-        if (scope.taints.hasOwnProperty(name)) {
+        if (common.hasOwnProperty(scope.taints, name)) {
             return false;
         }
         for (i = 0, iz = scope.through.length; i < iz; ++i) {
