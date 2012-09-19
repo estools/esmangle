@@ -263,6 +263,35 @@
     function optimize(tree, pipeline, options) {
         var i, iz, j, jz, section, pass;
 
+        if (null == pipeline) {
+            pipeline = [
+                [
+                    'lib/pass/hoist-variable-to-arguments',
+                    'lib/pass/transform-dynamic-to-static-property-access',
+                    'lib/pass/transform-dynamic-to-static-property-definition',
+                    'lib/pass/reordering-function-declarations',
+                    'lib/pass/remove-unused-label',
+                    'lib/pass/remove-empty-statement',
+                    'lib/pass/remove-wasted-blocks',
+                    'lib/pass/transform-to-compound-assignment',
+                    'lib/pass/transform-to-sequence-expression',
+                    'lib/pass/transform-branch-to-expression',
+                    'lib/pass/transform-typeof-undefined',
+                    'lib/pass/reduce-sequence-expression',
+                    'lib/pass/reduce-branch-jump',
+                    'lib/pass/reduce-multiple-if-statements',
+                    'lib/pass/dead-code-elimination',
+                    'lib/pass/remove-side-effect-free-expressions',
+                    'lib/pass/tree-based-constant-folding'
+                ].map(exports.require),
+                [
+                    'lib/post/transform-static-to-dynamic-property-access',
+                    'lib/post/rewrite-boolean',
+                    'lib/post/rewrite-conditional-expression'
+                ].map(exports.require)
+            ];
+        }
+
         for (i = 0, iz = pipeline.length; i < iz; ++i) {
             section = pipeline[i];
             // simple iterative pass
