@@ -264,6 +264,9 @@
         var i, iz, j, jz, section, pass;
 
         if (null == pipeline) {
+            if (!exports.require) {
+                return tree;
+            }
             pipeline = [
                 [
                     'lib/pass/hoist-variable-to-arguments',
