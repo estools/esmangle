@@ -37,42 +37,17 @@ var fs = require('fs'),
     passes;
 
 esmangle = require(path.join(root, 'esmangle'));
-passes = [
-    esmangle.require('lib/pass/hoist-variable-to-arguments'),
-    esmangle.require('lib/pass/transform-dynamic-to-static-property-access'),
-    esmangle.require('lib/pass/transform-dynamic-to-static-property-definition'),
-    esmangle.require('lib/pass/reordering-function-declarations'),
-    esmangle.require('lib/pass/remove-unused-label'),
-    esmangle.require('lib/pass/remove-empty-statement'),
-    esmangle.require('lib/pass/remove-wasted-blocks'),
-    esmangle.require('lib/pass/transform-to-compound-assignment'),
-    esmangle.require('lib/pass/transform-to-sequence-expression'),
-    esmangle.require('lib/pass/transform-branch-to-expression'),
-    esmangle.require('lib/pass/transform-typeof-undefined'),
-    esmangle.require('lib/pass/reduce-sequence-expression'),
-    esmangle.require('lib/pass/reduce-branch-jump'),
-    esmangle.require('lib/pass/reduce-multiple-if-statements'),
-    esmangle.require('lib/pass/dead-code-elimination'),
-    esmangle.require('lib/pass/remove-side-effect-free-expressions'),
-    esmangle.require('lib/pass/tree-based-constant-folding')
-];
 
 argv = optimist.usage("Usage: $0 file")
     .boolean('source-map')
     .describe('source-map', 'dump source-map')
     .demand(1).argv;
 
-post = [
-    esmangle.require('lib/post/transform-static-to-dynamic-property-access'),
-    esmangle.require('lib/post/rewrite-boolean'),
-    esmangle.require('lib/post/rewrite-conditional-expression')
-];
-
 argv._.forEach(function (filename) {
     var content, tree;
     content = fs.readFileSync(filename, 'utf-8');
     tree = esprima.parse(content, { loc: true });
-    tree = esmangle.optimize(tree, [ passes, post ], {
+    tree = esmangle.optimize(tree, null, {
         destructive: true
     });
     tree = esmangle.mangle(tree, {
