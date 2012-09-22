@@ -272,6 +272,7 @@
                     'lib/pass/hoist-variable-to-arguments',
                     'lib/pass/transform-dynamic-to-static-property-access',
                     'lib/pass/transform-dynamic-to-static-property-definition',
+                    'lib/pass/transform-immediate-function-call',
                     'lib/pass/reordering-function-declarations',
                     'lib/pass/remove-unused-label',
                     'lib/pass/remove-empty-statement',
