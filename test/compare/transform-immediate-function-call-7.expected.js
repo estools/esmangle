@@ -1,1 +1,1 @@
-a=(f(),void 0)
+f(),a=void 0
