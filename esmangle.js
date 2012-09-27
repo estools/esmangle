@@ -286,7 +286,8 @@
                     'lib/pass/reduce-multiple-if-statements',
                     'lib/pass/dead-code-elimination',
                     'lib/pass/remove-side-effect-free-expressions',
-                    'lib/pass/tree-based-constant-folding'
+                    'lib/pass/remove-context-sensitive-expressions',
+                    'lib/pass/tree-based-constant-folding',
                 ].map(exports.require),
                 [
                     'lib/post/transform-static-to-dynamic-property-access',

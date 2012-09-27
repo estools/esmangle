@@ -1,0 +1,5 @@
+(function () {
+    if (!!cond) {
+        ok();
+    }
+}());
