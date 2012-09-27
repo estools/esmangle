@@ -1,6 +1,6 @@
 (function () {
-    var a = 20;  // should hoist this
-    (function () {
-        arguments[0] = 20;
-    }());
+    function t() {
+        var i = 20;
+        return i;
+    }
 }());

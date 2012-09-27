@@ -1,1 +1,1 @@
-(function(a){a=20,function(){arguments[0]=20}()}())
+(function(){function a(){var a=20;return a}}())
