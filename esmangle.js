@@ -289,11 +289,15 @@
                     'lib/pass/remove-context-sensitive-expressions',
                     'lib/pass/tree-based-constant-folding',
                 ].map(exports.require),
-                [
-                    'lib/post/transform-static-to-dynamic-property-access',
-                    'lib/post/rewrite-boolean',
-                    'lib/post/rewrite-conditional-expression'
-                ].map(exports.require)
+                {
+                    once: true,
+                    pass: [
+                        'lib/post/transform-static-to-dynamic-property-access',
+                        'lib/post/transform-infinity',
+                        'lib/post/rewrite-boolean',
+                        'lib/post/rewrite-conditional-expression'
+                    ].map(exports.require)
+                }
             ];
         }
 
