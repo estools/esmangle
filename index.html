@@ -22,23 +22,7 @@
     <script src="javascripts/codemirror/javascript.js"></script>
     <script src="javascripts/esprima.js"></script>
     <script src="javascripts/escodegen.js"></script>
-    <script src="javascripts/esmangle/lib/common.js"></script>
-    <script src="javascripts/esmangle/esmangle.js"></script>
-    <script src="javascripts/esmangle/lib/pass/transform-dynamic-to-static-property-access.js"></script>
-    <script src="javascripts/esmangle/lib/pass/reordering-function-declarations.js"></script>
-    <script src="javascripts/esmangle/lib/pass/remove-unused-label.js"></script>
-    <script src="javascripts/esmangle/lib/pass/remove-empty-statement.js"></script>
-    <script src="javascripts/esmangle/lib/pass/remove-wasted-blocks.js"></script>
-    <script src="javascripts/esmangle/lib/pass/transform-to-compound-assignment.js"></script>
-    <script src="javascripts/esmangle/lib/pass/transform-to-sequence-expression.js"></script>
-    <script src="javascripts/esmangle/lib/pass/transform-branch-to-expression.js"></script>
-    <script src="javascripts/esmangle/lib/pass/reduce-sequence-expression.js"></script>
-    <script src="javascripts/esmangle/lib/pass/reduce-branch-jump.js"></script>
-    <script src="javascripts/esmangle/lib/pass/reduce-multiple-if-statements.js"></script>
-    <script src="javascripts/esmangle/lib/pass/dead-code-elimination.js"></script>
-    <script src="javascripts/esmangle/lib/post/rewrite-boolean.js"></script>
-    <script src="javascripts/esmangle/lib/post/rewrite-conditional-expression.js"></script>
-    <script src="javascripts/esmangle/lib/post/transform-static-to-dynamic-property-access.js"></script>
+    <script src="javascripts/esmangle.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <style type="text/css">
 .CodeMirror pre {
@@ -69,9 +53,7 @@ href="https://developer.mozilla.org/en/SpiderMonkey/Parser_API">Mozilla Parser A
 
 <p>esmangle can be used in a web browser:</p>
 
-<pre><code>&lt;script src="esmangle/lib/common.js"&gt;&lt;/script&gt;
-&lt;script src="esmangle/esmangle.js"&gt;&lt;/script&gt;
-</code></pre>
+<pre><code>&lt;script src="esmangle/esmangle.js"&gt;&lt;/script&gt;</code></pre>
 
 <p>or in a Node.js application via the package manager:</p>
 
@@ -96,50 +78,50 @@ console.log(escodegen.generate(result));  // dump AST
 <p>Get more compressed result: (in Node.js)</p>
 <pre><code>var ast = esprima.parse(code);
 // You can add your original pass
-// See lib/pass/*.js for pass function format
+// See pass/*.js for pass function format
 var passes = [
     // transform dynamic to static property access
-    esmangle.require('lib/pass/transform-dynamic-to-static-property-access'),
+    esmangle.require('pass/transform-dynamic-to-static-property-access'),
 
     // reordering function declaration
-    esmangle.require('lib/pass/reordering-function-declarations'),
+    esmangle.require('pass/reordering-function-declarations'),
 
     // remove unused label
-    esmangle.require('lib/pass/remove-unused-label'),
+    esmangle.require('pass/remove-unused-label'),
 
     // remove empty statement
-    esmangle.require('lib/pass/remove-empty-statement'),
+    esmangle.require('pass/remove-empty-statement'),
 
     // remove wasted blocks
-    esmangle.require('lib/pass/remove-wasted-blocks'),
+    esmangle.require('pass/remove-wasted-blocks'),
 
     // transform to compound assignment
-    esmangle.require('lib/pass/transform-to-compound-assignment'),
+    esmangle.require('pass/transform-to-compound-assignment'),
 
     // transform to sequence expression
-    esmangle.require('lib/pass/transform-to-sequence-expression'),
+    esmangle.require('pass/transform-to-sequence-expression'),
 
     // transform branch to expression
-    esmangle.require('lib/pass/transform-branch-to-expression'),
+    esmangle.require('pass/transform-branch-to-expression'),
 
     // reduce sequence expression
-    esmangle.require('lib/pass/reduce-sequence-expression'),
+    esmangle.require('pass/reduce-sequence-expression'),
 
     // reduce branch jump
-    esmangle.require('lib/pass/reduce-branch-jump'),
+    esmangle.require('pass/reduce-branch-jump'),
 
     // reduce multiple if statements
-    esmangle.require('lib/pass/reduce-multiple-if-statements'),
+    esmangle.require('pass/reduce-multiple-if-statements'),
 
     // dead code elimination
-    esmangle.require('lib/pass/dead-code-elimination')
+    esmangle.require('pass/dead-code-elimination')
 ];
 
 // And you can add original post processes
 var post = [
-    esmangle.require('lib/post/transform-static-to-dynamic-property-access'),
-    esmangle.require('lib/post/rewrite-boolean'),
-    esmangle.require('lib/post/rewrite-conditional-expression')
+    esmangle.require('post/transform-static-to-dynamic-property-access'),
+    esmangle.require('post/rewrite-boolean'),
+    esmangle.require('post/rewrite-conditional-expression')
 ];
 
 // Get optimized AST
@@ -237,41 +219,9 @@ function minify() {
     code = window.editor.getValue();
     try {
         tree = esprima.parse(code);
-        passes = [
-            esmangle.pass.transformDynamicToStaticPropertyAccess,
-            esmangle.pass.reorderingFunctionDeclarations,
-            esmangle.pass.removeUnusedLabel,
-            esmangle.pass.removeEmptyStatement,
-            esmangle.pass.removeWastedBlocks,
-            esmangle.pass.transformToCompoundAssignment,
-            esmangle.pass.transformToSequenceExpression,
-            esmangle.pass.transformBranchToExpression,
-            esmangle.pass.reduceSequenceExpression,
-            esmangle.pass.reduceBranchJump,
-            esmangle.pass.reduceMultipleIfStatements,
-            esmangle.pass.deadCodeElimination
-        ];
 
-        post = [
-            esmangle.post.transformStaticToDynamicPropertyAccess,
-            esmangle.post.rewriteBoolean,
-            esmangle.post.rewriteConditionalExpression
-        ];
-
-        tree = esmangle.optimize(tree, passes, {
-            destructive: true
-        });
-
-        tree = _.reduce(post, function (tree, pass) {
-            return pass(tree, {
-                destructive: true
-            });
-        }, tree);
-
-        tree = esmangle.mangle(tree, {
-            destructive: true
-        });
-
+        tree = esmangle.optimize(tree, null, { destructive: true });
+        tree = esmangle.mangle(tree, { destructive: true });
         result = escodegen.generate(tree, {
             format: {
                 renumber: true,
