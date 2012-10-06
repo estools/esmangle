@@ -1,5 +1,7 @@
+#!/usr/bin/env node
 /*
   Copyright (C) 2012 Yusuke Suzuki <utatane.tea@gmail.com>
+  Copyright (C) 2012 Ariya Hidayat <ariya.hidayat@gmail.com>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
@@ -22,54 +24,15 @@
   THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/*jslint bitwise:true */
-/*global esmangle:true, module:true, define:true, require:true*/
 (function () {
     'use strict';
+    var child_process = require('child_process'),
+        fs = require('fs'),
+        path = require('path'),
+        root = path.join(path.dirname(fs.realpathSync(__filename)), '..');
 
-    var Syntax, common, modified;
-
-    common = require('../common');
-    Syntax = common.Syntax;
-
-    function rewrite(node) {
-        var test, consequent, alternate;
-        test = node.test;
-        consequent = node.consequent;
-        alternate = node.alternate;
-        if (test.type === Syntax.UnaryExpression && test.operator === '!') {
-            modified = true;
-            node.consequent = alternate;
-            node.alternate = consequent;
-            node.test = test.argument;
-        }
-    }
-
-    function rewriteConditionalExpression(tree, options) {
-        var result;
-
-        if (options == null) {
-            options = { destructive: false };
-        }
-
-        modified = false;
-        result = (options.destructive) ? tree : common.deepCopy(tree);
-
-        common.traverse(result, {
-            enter: function enter(node) {
-                if (node.type === Syntax.ConditionalExpression) {
-                    rewrite(node);
-                }
-            }
-        });
-
-        return {
-            result: result,
-            modified: modified
-        };
-    }
-
-    rewriteConditionalExpression.passName = 'rewrite-conditional-expression';
-    module.exports = rewriteConditionalExpression;
+    child_process.exec(
+        path.join(root, 'node_modules', '.bin', 'browserify') + ' ' +
+        path.join(root, 'tools', 'entry.js') + ' -o ' +
+        path.join(root, 'esmangle.js'));
 }());
-/* vim: set sw=4 ts=4 et tw=80 : */

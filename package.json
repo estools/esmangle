@@ -2,7 +2,7 @@
     "name": "esmangle",
     "description": "ECMAScript code mangler / minifier",
     "homepage": "http://github.com/Constellation/esmangle.html",
-    "main": "esmangle.js",
+    "main": "lib/esmangle.js",
     "bin": {
         "esmangle": "./bin/esmangle.js"
     },
@@ -31,7 +31,8 @@
     },
     "devDependencies": {
         "mocha": "*",
-        "chai": "*"
+        "chai": "*",
+        "browserify": "*"
     },
     "licenses": [{
         "type": "BSD",

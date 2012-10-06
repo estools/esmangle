@@ -37,34 +37,34 @@ var fs = require('fs'),
     existsSync;
 
 existsSync = fs.existsSync || path.existsSync;
-esmangle = require(path.join(root, 'esmangle'));
+esmangle = require(path.join(root, 'lib', 'esmangle'));
 defaultPass = [
-    esmangle.require('lib/pass/tree-based-constant-folding'),
-    esmangle.require('lib/pass/hoist-variable-to-arguments'),
-    esmangle.require('lib/pass/transform-dynamic-to-static-property-access'),
-    esmangle.require('lib/pass/transform-dynamic-to-static-property-definition'),
-    esmangle.require('lib/pass/transform-immediate-function-call'),
-    esmangle.require('lib/pass/reordering-function-declarations'),
-    esmangle.require('lib/pass/remove-unused-label'),
-    esmangle.require('lib/pass/remove-empty-statement'),
-    esmangle.require('lib/pass/remove-wasted-blocks'),
-    esmangle.require('lib/pass/transform-to-compound-assignment'),
-    esmangle.require('lib/pass/transform-to-sequence-expression'),
-    esmangle.require('lib/pass/transform-branch-to-expression'),
-    esmangle.require('lib/pass/transform-typeof-undefined'),
-    esmangle.require('lib/pass/reduce-sequence-expression'),
-    esmangle.require('lib/pass/reduce-branch-jump'),
-    esmangle.require('lib/pass/reduce-multiple-if-statements'),
-    esmangle.require('lib/pass/dead-code-elimination'),
-    esmangle.require('lib/pass/remove-side-effect-free-expressions'),
-    esmangle.require('lib/pass/remove-context-sensitive-expressions')
+    esmangle.require('pass/tree-based-constant-folding'),
+    esmangle.require('pass/hoist-variable-to-arguments'),
+    esmangle.require('pass/transform-dynamic-to-static-property-access'),
+    esmangle.require('pass/transform-dynamic-to-static-property-definition'),
+    esmangle.require('pass/transform-immediate-function-call'),
+    esmangle.require('pass/reordering-function-declarations'),
+    esmangle.require('pass/remove-unused-label'),
+    esmangle.require('pass/remove-empty-statement'),
+    esmangle.require('pass/remove-wasted-blocks'),
+    esmangle.require('pass/transform-to-compound-assignment'),
+    esmangle.require('pass/transform-to-sequence-expression'),
+    esmangle.require('pass/transform-branch-to-expression'),
+    esmangle.require('pass/transform-typeof-undefined'),
+    esmangle.require('pass/reduce-sequence-expression'),
+    esmangle.require('pass/reduce-branch-jump'),
+    esmangle.require('pass/reduce-multiple-if-statements'),
+    esmangle.require('pass/dead-code-elimination'),
+    esmangle.require('pass/remove-side-effect-free-expressions'),
+    esmangle.require('pass/remove-context-sensitive-expressions')
 ];
 
 defaultPost = [
-    esmangle.require('lib/post/transform-static-to-dynamic-property-access'),
-    esmangle.require('lib/post/transform-infinity'),
-    esmangle.require('lib/post/rewrite-boolean'),
-    esmangle.require('lib/post/rewrite-conditional-expression')
+    esmangle.require('post/transform-static-to-dynamic-property-access'),
+    esmangle.require('post/transform-infinity'),
+    esmangle.require('post/rewrite-boolean'),
+    esmangle.require('post/rewrite-conditional-expression')
 ];
 
 describe('compare mangling result', function () {
@@ -94,10 +94,10 @@ describe('compare mangling result', function () {
                             parsed = JSON.parse(comment.value.trim());
                             if (typeof parsed === 'object' && parsed !== null) {
                                 pass = parsed.pass ? parsed.pass.map(function (name) {
-                                    return esmangle.require('lib/pass/' + name);
+                                    return esmangle.require('pass/' + name);
                                 }) : [];
                                 post = parsed.post ? parsed.post.map(function (name) {
-                                    return esmangle.require('lib/post/' + name);
+                                    return esmangle.require('post/' + name);
                                 }) : [];
                                 return true;
                             }
