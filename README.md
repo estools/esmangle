@@ -4,6 +4,11 @@ mangler / minifier for [Parser API](https://developer.mozilla.org/en/SpiderMonke
 
 ### Install
 
+esmangle can be used in a web browser: <a href="http://constellation.github.com/esmangle/javascripts/esmangle.js" target="_blank">Download</a>
+
+    <script src="esmangle.js"></script>
+
+
 Node.js application via the package manager:
 
     npm install esmangle
@@ -24,60 +29,8 @@ Or you can simply use this `esmangle` command in the shell.
 Get more compressed result: (in Node.js)
 
     var ast = esprima.parse(code);
-
-    // You can add your original pass
-    // See lib/pass/*.js for pass function format
-    var passes = [
-        // transform dynamic to static property access
-        esmangle.require('lib/pass/transform-dynamic-to-static-property-access'),
-
-        // reordering function declaration
-        esmangle.require('lib/pass/reordering-function-declarations'),
-
-        // remove unused label
-        esmangle.require('lib/pass/remove-unused-label'),
-
-        // remove empty statement
-        esmangle.require('lib/pass/remove-empty-statement'),
-
-        // remove wasted blocks
-        esmangle.require('lib/pass/remove-wasted-blocks'),
-
-        // transform to compound assignment
-        esmangle.require('lib/pass/transform-to-compound-assignment'),
-
-        // transform to sequence expression
-        esmangle.require('lib/pass/transform-to-sequence-expression'),
-
-        // transform branch to expression
-        esmangle.require('lib/pass/transform-branch-to-expression'),
-
-        // reduce sequence expression
-        esmangle.require('lib/pass/reduce-sequence-expression'),
-
-        // reduce branch jump
-        esmangle.require('lib/pass/reduce-branch-jump'),
-
-        // reduce multiple if statements
-        esmangle.require('lib/pass/reduce-multiple-if-statements'),
-
-        // dead code elimination
-        esmangle.require('lib/pass/dead-code-elimination')
-    ];
-
-    // And you can add original post processes
-    var post = [
-        esmangle.require('lib/post/transform-static-to-dynamic-property-access'),
-        esmangle.require('lib/post/rewrite-boolean'),
-        esmangle.require('lib/post/rewrite-conditional-expression')
-    ];
-
     // Get optimized AST
-    var optimized = esmangle.optimize(ast, passes);
-    optimized = post.reduce(function (tree, p) {
-        return p(tree);
-    }, optimized);
-
+    var optimized = esmangle.optimize(ast, null);
     // gets mangled AST
     var result = esmangle.mangle(optimized);
     console.log(escodegen.generate(result, {
