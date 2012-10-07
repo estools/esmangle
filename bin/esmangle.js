@@ -36,7 +36,7 @@ var fs = require('fs'),
     post,
     passes;
 
-esmangle = require(path.join(root, 'esmangle'));
+esmangle = require(root);
 
 argv = optimist.usage("Usage: $0 file")
     .boolean('source-map')
