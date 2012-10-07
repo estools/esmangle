@@ -37,7 +37,7 @@ var fs = require('fs'),
     existsSync;
 
 existsSync = fs.existsSync || path.existsSync;
-esmangle = require(path.join(root, 'lib', 'esmangle'));
+esmangle = require(root);
 defaultPass = [
     esmangle.require('pass/tree-based-constant-folding'),
     esmangle.require('pass/hoist-variable-to-arguments'),
