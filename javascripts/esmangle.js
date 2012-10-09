@@ -424,13 +424,15 @@ require.define("/lib/esmangle.js",function(require,module,exports,__dirname,__fi
     var VERSION,
         escope,
         common,
-        Syntax;
+        Syntax,
+        annotateDirective;
 
     // Sync with package.json.
     VERSION = '0.0.6-dev';
 
     escope = require('escope');
     common = require('./common');
+    annotateDirective = require('./annotate-directive');
     Syntax = common.Syntax;
 
     // simple visitor implementation
@@ -526,7 +528,7 @@ require.define("/lib/esmangle.js",function(require,module,exports,__dirname,__fi
 
     // recover some broken AST
 
-    function recover(tree) {
+    function recover(tree, useDirectiveStatement) {
         function trailingIf(node) {
             while (true) {
                 switch (node.type) {
@@ -561,6 +563,11 @@ require.define("/lib/esmangle.js",function(require,module,exports,__dirname,__fi
                             };
                         }
                     }
+                }
+                if (!useDirectiveStatement && node.type === Syntax.DirectiveStatement) {
+                    node.type = Syntax.ExpressionStatement;
+                    node.expression = node.directive;
+                    delete node.directive;
                 }
             }
         });
@@ -631,10 +638,9 @@ require.define("/lib/esmangle.js",function(require,module,exports,__dirname,__fi
     function optimize(tree, pipeline, options) {
         var i, iz, j, jz, section, pass;
 
+        tree = annotateDirective(tree, { destructive: false });
+
         if (null == pipeline) {
-            if (!exports.require) {
-                return tree;
-            }
             pipeline = [
                 [
                     'pass/hoist-variable-to-arguments',
@@ -656,7 +662,7 @@ require.define("/lib/esmangle.js",function(require,module,exports,__dirname,__fi
                     'pass/remove-side-effect-free-expressions',
                     'pass/remove-context-sensitive-expressions',
                     'pass/tree-based-constant-folding',
-                ].map(exports.require),
+                ].map(esmangle_require),
                 {
                     once: true,
                     pass: [
@@ -664,9 +670,13 @@ require.define("/lib/esmangle.js",function(require,module,exports,__dirname,__fi
                         'post/transform-infinity',
                         'post/rewrite-boolean',
                         'post/rewrite-conditional-expression'
-                    ].map(exports.require)
+                    ].map(esmangle_require)
                 }
             ];
+        }
+
+        if (options == null) {
+            options = {};
         }
 
         for (i = 0, iz = pipeline.length; i < iz; ++i) {
@@ -682,22 +692,18 @@ require.define("/lib/esmangle.js",function(require,module,exports,__dirname,__fi
             }
         }
 
-        return recover(tree);
+        return recover(tree, options.directive);
+    }
+
+    function esmangle_require() {
+        var args = ['./' + arguments[0]].concat([].slice.call(arguments, 1));
+        return require.apply(null, args);
     }
 
     exports.version = VERSION;
     exports.mangle = mangle;
     exports.optimize = optimize;
-
-    if (typeof exports.pass === 'undefined') {
-        exports.pass = {};
-    }
-
-    exports.require = function esmangle_require() {
-        var args = Array.prototype.slice.call(arguments);
-        args[0] = './' + args[0];
-        return require.apply(this, args);
-    };
+    exports.require = esmangle_require;
 }());
 /* vim: set sw=4 ts=4 et tw=80 : */
 
@@ -770,7 +776,7 @@ require.define("/node_modules/escope/escope.js",function(require,module,exports,
         scope,
         scopes;
 
-    VERSION = '0.0.4';
+    VERSION = '0.0.5';
 
     function assert(cond, text) {
         if (!cond) {
@@ -792,6 +798,7 @@ require.define("/node_modules/escope/escope.js",function(require,module,exports,
         CatchClause: 'CatchClause',
         ConditionalExpression: 'ConditionalExpression',
         ContinueStatement: 'ContinueStatement',
+        DirectiveStatement: 'DirectiveStatement',
         DoWhileStatement: 'DoWhileStatement',
         DebuggerStatement: 'DebuggerStatement',
         EmptyStatement: 'EmptyStatement',
@@ -844,6 +851,7 @@ require.define("/node_modules/escope/escope.js",function(require,module,exports,
         CatchClause: ['param', 'body'],
         ConditionalExpression: ['test', 'consequent', 'alternate'],
         ContinueStatement: ['label'],
+        DirectiveStatement: ['directive'],
         DoWhileStatement: ['body', 'test'],
         DebuggerStatement: [],
         EmptyStatement: [],
@@ -1309,6 +1317,9 @@ require.define("/node_modules/escope/escope.js",function(require,module,exports,
                 case Syntax.ContinueStatement:
                     break;
 
+                case Syntax.DirectiveStatement:
+                    break;
+
                 case Syntax.DoWhileStatement:
                     scope.__referencing(node.test);
                     break;
@@ -1504,53 +1515,13 @@ require.define("/lib/common.js",function(require,module,exports,__dirname,__file
         arrayOf,
         sameValue,
         hasOwnProperty,
-        VisitorOption,
-        VisitorKeys,
+        estraverse,
         NameSequence,
         ZeroSequenceCache;
 
-    Syntax = {
-        AssignmentExpression: 'AssignmentExpression',
-        ArrayExpression: 'ArrayExpression',
-        BlockStatement: 'BlockStatement',
-        BinaryExpression: 'BinaryExpression',
-        BreakStatement: 'BreakStatement',
-        CallExpression: 'CallExpression',
-        CatchClause: 'CatchClause',
-        ConditionalExpression: 'ConditionalExpression',
-        ContinueStatement: 'ContinueStatement',
-        DoWhileStatement: 'DoWhileStatement',
-        DebuggerStatement: 'DebuggerStatement',
-        EmptyStatement: 'EmptyStatement',
-        ExpressionStatement: 'ExpressionStatement',
-        ForStatement: 'ForStatement',
-        ForInStatement: 'ForInStatement',
-        FunctionDeclaration: 'FunctionDeclaration',
-        FunctionExpression: 'FunctionExpression',
-        Identifier: 'Identifier',
-        IfStatement: 'IfStatement',
-        Literal: 'Literal',
-        LabeledStatement: 'LabeledStatement',
-        LogicalExpression: 'LogicalExpression',
-        MemberExpression: 'MemberExpression',
-        NewExpression: 'NewExpression',
-        ObjectExpression: 'ObjectExpression',
-        Program: 'Program',
-        Property: 'Property',
-        ReturnStatement: 'ReturnStatement',
-        SequenceExpression: 'SequenceExpression',
-        SwitchStatement: 'SwitchStatement',
-        SwitchCase: 'SwitchCase',
-        ThisExpression: 'ThisExpression',
-        ThrowStatement: 'ThrowStatement',
-        TryStatement: 'TryStatement',
-        UnaryExpression: 'UnaryExpression',
-        UpdateExpression: 'UpdateExpression',
-        VariableDeclaration: 'VariableDeclaration',
-        VariableDeclarator: 'VariableDeclarator',
-        WhileStatement: 'WhileStatement',
-        WithStatement: 'WithStatement'
-    };
+    estraverse = require('estraverse');
+
+    Syntax = estraverse.Syntax;
 
     // See also tools/generate-unicode-regex.py.
     Regex = {
@@ -1636,190 +1607,6 @@ require.define("/lib/common.js",function(require,module,exports,__dirname,__file
             return result;
         }
         return deepCopyInternal(obj, isArray(obj) ? [] : {});
-    }
-
-    // removable traverse function
-
-    VisitorKeys = {
-        AssignmentExpression: ['left', 'right'],
-        ArrayExpression: ['elements'],
-        BlockStatement: ['body'],
-        BinaryExpression: ['left', 'right'],
-        BreakStatement: ['label'],
-        CallExpression: ['callee', 'arguments'],
-        CatchClause: ['param', 'body'],
-        ConditionalExpression: ['test', 'consequent', 'alternate'],
-        ContinueStatement: ['label'],
-        DoWhileStatement: ['body', 'test'],
-        DebuggerStatement: [],
-        EmptyStatement: [],
-        ExpressionStatement: ['expression'],
-        ForStatement: ['init', 'test', 'update', 'body'],
-        ForInStatement: ['left', 'right', 'body'],
-        FunctionDeclaration: ['id', 'params', 'body'],
-        FunctionExpression: ['id', 'params', 'body'],
-        Identifier: [],
-        IfStatement: ['test', 'consequent', 'alternate'],
-        Literal: [],
-        LabeledStatement: ['label', 'body'],
-        LogicalExpression: ['left', 'right'],
-        MemberExpression: ['object', 'property'],
-        NewExpression: ['callee', 'arguments'],
-        ObjectExpression: ['properties'],
-        Program: ['body'],
-        Property: ['key', 'value'],
-        ReturnStatement: ['argument'],
-        SequenceExpression: ['expressions'],
-        SwitchStatement: ['discriminant', 'cases'],
-        SwitchCase: ['test', 'consequent'],
-        ThisExpression: [],
-        ThrowStatement: ['argument'],
-        TryStatement: ['block', 'handlers', 'finalizer'],
-        UnaryExpression: ['argument'],
-        UpdateExpression: ['argument'],
-        VariableDeclaration: ['declarations'],
-        VariableDeclarator: ['id', 'init'],
-        WhileStatement: ['test', 'body'],
-        WithStatement: ['object', 'body']
-    };
-
-    VisitorOption = {
-        Break: 1,
-        Skip: 2
-    };
-
-    function traverse(top, visitor) {
-        var worklist, leavelist, node, ret, current, current2, candidates, candidate, marker = {};
-
-        worklist = [ top ];
-        leavelist = [ null ];
-
-        while (worklist.length) {
-            node = worklist.pop();
-
-            if (node === marker) {
-                node = leavelist.pop();
-                if (visitor.leave) {
-                    ret = visitor.leave(node, leavelist[leavelist.length - 1]);
-                } else {
-                    ret = undefined;
-                }
-                if (ret === VisitorOption.Break) {
-                    return;
-                }
-            } else if (node) {
-                if (visitor.enter) {
-                    ret = visitor.enter(node, leavelist[leavelist.length - 1]);
-                } else {
-                    ret = undefined;
-                }
-
-                if (ret === VisitorOption.Break) {
-                    return;
-                }
-
-                worklist.push(marker);
-                leavelist.push(node);
-
-                if (ret !== VisitorOption.Skip) {
-                    candidates = VisitorKeys[node.type];
-                    current = candidates.length;
-                    while ((current -= 1) >= 0) {
-                        candidate = node[candidates[current]];
-                        if (candidate) {
-                            if (isArray(candidate)) {
-                                current2 = candidate.length;
-                                while ((current2 -= 1) >= 0) {
-                                    if (candidate[current2]) {
-                                        worklist.push(candidate[current2]);
-                                    }
-                                }
-                            } else {
-                                worklist.push(candidate);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    function replace(top, visitor) {
-        var worklist, leavelist, node, target, tuple, ret, current, current2, candidates, candidate, marker = {};
-
-        var result = {
-            top: top,
-        };
-
-        tuple = [ top, result, 'top' ];
-        worklist = [ tuple ];
-        leavelist = [ tuple ];
-
-        function notify(v) {
-            ret = v;
-        }
-
-        while (worklist.length) {
-            tuple = worklist.pop();
-
-            if (tuple === marker) {
-                tuple = leavelist.pop();
-                ret = undefined;
-                if (visitor.leave) {
-                    node = tuple[0];
-                    target = visitor.leave(tuple[0], leavelist[leavelist.length - 1][0], notify);
-                    if (target !== undefined) {
-                        node = target;
-                    }
-                    tuple[1][tuple[2]] = node;
-                }
-                if (ret === VisitorOption.Break) {
-                    return result.top;
-                }
-            } else if (tuple[0]) {
-                ret = undefined;
-                node = tuple[0];
-                if (visitor.enter) {
-                    target = visitor.enter(tuple[0], leavelist[leavelist.length - 1][0], notify);
-                    if (target !== undefined) {
-                        node = target;
-                    }
-                    tuple[1][tuple[2]] = node;
-                    tuple[0] = node;
-                }
-
-                if (ret === VisitorOption.Break) {
-                    return result.top;
-                }
-
-                worklist.push(marker);
-                if (tuple[0]) {
-                    leavelist.push(tuple);
-
-                    if (ret !== VisitorOption.Skip) {
-                        candidates = VisitorKeys[node.type];
-                        current = candidates.length;
-                        while ((current -= 1) >= 0) {
-                            candidate = node[candidates[current]];
-                            if (candidate) {
-                                if (isArray(candidate)) {
-                                    current2 = candidate.length;
-                                    while ((current2 -= 1) >= 0) {
-                                        if (candidate[current2]) {
-                                            worklist.push([candidate[current2], candidate, current2]);
-                                        }
-                                    }
-                                } else {
-                                    worklist.push([candidate, node, candidates[current]]);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return result.top;
     }
 
     function assert(cond, text) {
@@ -2008,7 +1795,7 @@ require.define("/lib/common.js",function(require,module,exports,__dirname,__file
 
     function convertToEmptyStatement(node) {
         var i, iz, keys;
-        keys = VisitorKeys[node.type];
+        keys = estraverse.VisitorKeys[node.type];
         for (i = 0, iz = keys.length; i < iz; ++i) {
             delete node[keys[i]];
         }
@@ -2164,7 +1951,6 @@ require.define("/lib/common.js",function(require,module,exports,__dirname,__file
         return true;
     }
 
-    exports.Syntax = Syntax;
     exports.deepCopy = deepCopy;
     exports.hasOwnProperty = hasOwnProperty;
     exports.stringRepeat = stringRepeat;
@@ -2179,10 +1965,12 @@ require.define("/lib/common.js",function(require,module,exports,__dirname,__file
     // deprecated export
     exports.isArray = isArray;
 
-    exports.traverse = traverse;
-    exports.replace = replace;
-    exports.VisitorKeys = VisitorKeys;
-    exports.VisitorOption = VisitorOption;
+    exports.Syntax = Syntax;
+    exports.traverse = estraverse.traverse;
+    exports.replace = estraverse.replace;
+    exports.VisitorKeys = estraverse.VisitorKeys;
+    exports.VisitorOption = estraverse.VisitorOption;
+
     exports.assert = assert;
     exports.unreachable = unreachable;
     exports.isFutureReservedWord = isFutureReservedWord;
@@ -2218,6 +2006,387 @@ require.define("/lib/common.js",function(require,module,exports,__dirname,__file
         isReference: isReference,
         canExtractSequence: canExtractSequence
     };
+}());
+/* vim: set sw=4 ts=4 et tw=80 : */
+
+});
+
+require.define("/node_modules/estraverse/package.json",function(require,module,exports,__dirname,__filename,process,global){module.exports = {"main":"estraverse.js"}
+});
+
+require.define("/node_modules/estraverse/estraverse.js",function(require,module,exports,__dirname,__filename,process,global){/*
+  Copyright (C) 2012 Yusuke Suzuki <utatane.tea@gmail.com>
+  Copyright (C) 2012 Ariya Hidayat <ariya.hidayat@gmail.com>
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+/*jslint bitwise:true */
+/*global exports:true, define:true, window:true */
+(function (factory) {
+    'use strict';
+
+    // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
+    // and plain browser loading,
+    if (typeof define === 'function' && define.amd) {
+        define(['exports'], factory);
+    } else if (typeof exports !== 'undefined') {
+        factory(exports);
+    } else {
+        factory((window.estraverse = {}));
+    }
+}(function (exports) {
+    'use strict';
+
+    var Syntax,
+        isArray,
+        VisitorOption,
+        VisitorKeys;
+
+    Syntax = {
+        AssignmentExpression: 'AssignmentExpression',
+        ArrayExpression: 'ArrayExpression',
+        BlockStatement: 'BlockStatement',
+        BinaryExpression: 'BinaryExpression',
+        BreakStatement: 'BreakStatement',
+        CallExpression: 'CallExpression',
+        CatchClause: 'CatchClause',
+        ConditionalExpression: 'ConditionalExpression',
+        ContinueStatement: 'ContinueStatement',
+        DebuggerStatement: 'DebuggerStatement',
+        DirectiveStatement: 'DirectiveStatement',
+        DoWhileStatement: 'DoWhileStatement',
+        EmptyStatement: 'EmptyStatement',
+        ExpressionStatement: 'ExpressionStatement',
+        ForStatement: 'ForStatement',
+        ForInStatement: 'ForInStatement',
+        FunctionDeclaration: 'FunctionDeclaration',
+        FunctionExpression: 'FunctionExpression',
+        Identifier: 'Identifier',
+        IfStatement: 'IfStatement',
+        Literal: 'Literal',
+        LabeledStatement: 'LabeledStatement',
+        LogicalExpression: 'LogicalExpression',
+        MemberExpression: 'MemberExpression',
+        NewExpression: 'NewExpression',
+        ObjectExpression: 'ObjectExpression',
+        Program: 'Program',
+        Property: 'Property',
+        ReturnStatement: 'ReturnStatement',
+        SequenceExpression: 'SequenceExpression',
+        SwitchStatement: 'SwitchStatement',
+        SwitchCase: 'SwitchCase',
+        ThisExpression: 'ThisExpression',
+        ThrowStatement: 'ThrowStatement',
+        TryStatement: 'TryStatement',
+        UnaryExpression: 'UnaryExpression',
+        UpdateExpression: 'UpdateExpression',
+        VariableDeclaration: 'VariableDeclaration',
+        VariableDeclarator: 'VariableDeclarator',
+        WhileStatement: 'WhileStatement',
+        WithStatement: 'WithStatement'
+    };
+
+    isArray = Array.isArray;
+    if (!isArray) {
+        isArray = function isArray(array) {
+            return Object.prototype.toString.call(array) === '[object Array]';
+        };
+    }
+
+    VisitorKeys = {
+        AssignmentExpression: ['left', 'right'],
+        ArrayExpression: ['elements'],
+        BlockStatement: ['body'],
+        BinaryExpression: ['left', 'right'],
+        BreakStatement: ['label'],
+        CallExpression: ['callee', 'arguments'],
+        CatchClause: ['param', 'body'],
+        ConditionalExpression: ['test', 'consequent', 'alternate'],
+        ContinueStatement: ['label'],
+        DebuggerStatement: [],
+        DirectiveStatement: ['directive'],
+        DoWhileStatement: ['body', 'test'],
+        EmptyStatement: [],
+        ExpressionStatement: ['expression'],
+        ForStatement: ['init', 'test', 'update', 'body'],
+        ForInStatement: ['left', 'right', 'body'],
+        FunctionDeclaration: ['id', 'params', 'body'],
+        FunctionExpression: ['id', 'params', 'body'],
+        Identifier: [],
+        IfStatement: ['test', 'consequent', 'alternate'],
+        Literal: [],
+        LabeledStatement: ['label', 'body'],
+        LogicalExpression: ['left', 'right'],
+        MemberExpression: ['object', 'property'],
+        NewExpression: ['callee', 'arguments'],
+        ObjectExpression: ['properties'],
+        Program: ['body'],
+        Property: ['key', 'value'],
+        ReturnStatement: ['argument'],
+        SequenceExpression: ['expressions'],
+        SwitchStatement: ['discriminant', 'cases'],
+        SwitchCase: ['test', 'consequent'],
+        ThisExpression: [],
+        ThrowStatement: ['argument'],
+        TryStatement: ['block', 'handlers', 'finalizer'],
+        UnaryExpression: ['argument'],
+        UpdateExpression: ['argument'],
+        VariableDeclaration: ['declarations'],
+        VariableDeclarator: ['id', 'init'],
+        WhileStatement: ['test', 'body'],
+        WithStatement: ['object', 'body']
+    };
+
+    VisitorOption = {
+        Break: 1,
+        Skip: 2
+    };
+
+    function traverse(top, visitor) {
+        var worklist, leavelist, node, ret, current, current2, candidates, candidate, marker = {};
+
+        worklist = [ top ];
+        leavelist = [ null ];
+
+        while (worklist.length) {
+            node = worklist.pop();
+
+            if (node === marker) {
+                node = leavelist.pop();
+                if (visitor.leave) {
+                    ret = visitor.leave(node, leavelist[leavelist.length - 1]);
+                } else {
+                    ret = undefined;
+                }
+                if (ret === VisitorOption.Break) {
+                    return;
+                }
+            } else if (node) {
+                if (visitor.enter) {
+                    ret = visitor.enter(node, leavelist[leavelist.length - 1]);
+                } else {
+                    ret = undefined;
+                }
+
+                if (ret === VisitorOption.Break) {
+                    return;
+                }
+
+                worklist.push(marker);
+                leavelist.push(node);
+
+                if (ret !== VisitorOption.Skip) {
+                    candidates = VisitorKeys[node.type];
+                    current = candidates.length;
+                    while ((current -= 1) >= 0) {
+                        candidate = node[candidates[current]];
+                        if (candidate) {
+                            if (isArray(candidate)) {
+                                current2 = candidate.length;
+                                while ((current2 -= 1) >= 0) {
+                                    if (candidate[current2]) {
+                                        worklist.push(candidate[current2]);
+                                    }
+                                }
+                            } else {
+                                worklist.push(candidate);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    function replace(top, visitor) {
+        var worklist, leavelist, node, target, tuple, ret, current, current2, candidates, candidate, marker = {}, result;
+
+        result = {
+            top: top
+        };
+
+        tuple = [ top, result, 'top' ];
+        worklist = [ tuple ];
+        leavelist = [ tuple ];
+
+        function notify(v) {
+            ret = v;
+        }
+
+        while (worklist.length) {
+            tuple = worklist.pop();
+
+            if (tuple === marker) {
+                tuple = leavelist.pop();
+                ret = undefined;
+                if (visitor.leave) {
+                    node = tuple[0];
+                    target = visitor.leave(tuple[0], leavelist[leavelist.length - 1][0], notify);
+                    if (target !== undefined) {
+                        node = target;
+                    }
+                    tuple[1][tuple[2]] = node;
+                }
+                if (ret === VisitorOption.Break) {
+                    return result.top;
+                }
+            } else if (tuple[0]) {
+                ret = undefined;
+                node = tuple[0];
+                if (visitor.enter) {
+                    target = visitor.enter(tuple[0], leavelist[leavelist.length - 1][0], notify);
+                    if (target !== undefined) {
+                        node = target;
+                    }
+                    tuple[1][tuple[2]] = node;
+                    tuple[0] = node;
+                }
+
+                if (ret === VisitorOption.Break) {
+                    return result.top;
+                }
+
+                worklist.push(marker);
+                if (tuple[0]) {
+                    leavelist.push(tuple);
+
+                    if (ret !== VisitorOption.Skip) {
+                        candidates = VisitorKeys[node.type];
+                        current = candidates.length;
+                        while ((current -= 1) >= 0) {
+                            candidate = node[candidates[current]];
+                            if (candidate) {
+                                if (isArray(candidate)) {
+                                    current2 = candidate.length;
+                                    while ((current2 -= 1) >= 0) {
+                                        if (candidate[current2]) {
+                                            worklist.push([candidate[current2], candidate, current2]);
+                                        }
+                                    }
+                                } else {
+                                    worklist.push([candidate, node, candidates[current]]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return result.top;
+    }
+
+    exports.version = '0.0.1';
+    exports.Syntax = Syntax;
+    exports.traverse = traverse;
+    exports.replace = replace;
+    exports.VisitorKeys = VisitorKeys;
+    exports.VisitorOption = VisitorOption;
+}));
+/* vim: set sw=4 ts=4 et tw=80 : */
+
+});
+
+require.define("/lib/annotate-directive.js",function(require,module,exports,__dirname,__filename,process,global){/*
+  Copyright (C) 2012 Yusuke Suzuki <utatane.tea@gmail.com>
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+/*jslint bitwise:true */
+/*global esmangle:true, module:true, define:true, require:true*/
+(function () {
+    'use strict';
+
+    var Syntax, common;
+
+    common = require('./common');
+    Syntax = common.Syntax;
+
+    function isDirective(stmt) {
+        var expr;
+        if (stmt.type === Syntax.ExpressionStatement) {
+            expr = stmt.expression;
+            if (expr.type === Syntax.Literal && typeof expr.value === 'string') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function annotateDirective(tree, options) {
+        var result;
+
+        if (options == null) {
+            options = { destructive: false };
+        }
+
+        result = (options.destructive) ? tree : common.deepCopy(tree);
+
+        common.traverse(result, {
+            enter: function enter(node, parent) {
+                var stmt, i, iz;
+
+                if (!(node.type === Syntax.Program ||
+                        (node.type === Syntax.BlockStatement && (parent.type === Syntax.FunctionExpression || parent.type === Syntax.FunctionDeclaration)))) {
+                    return;
+                }
+
+                for (i = 0, iz = node.body.length; i < iz; ++i) {
+                    stmt = node.body[i];
+                    if (isDirective(stmt)) {
+                        stmt.type = Syntax.DirectiveStatement;
+                        stmt.directive = stmt.expression;
+                        delete stmt.expression;
+                    } else {
+                        return;
+                    }
+                }
+            }
+        });
+
+        return result;
+    }
+
+    annotateDirective.passName = 'annotate-directive';
+    module.exports = annotateDirective;
 }());
 /* vim: set sw=4 ts=4 et tw=80 : */
 
@@ -2741,21 +2910,24 @@ require.define("/lib/pass/reordering-function-declarations.js",function(require,
     Syntax = common.Syntax;
 
     function reordering(array) {
-        var i, iz, node, declarations, others;
+        var i, iz, node, directives, declarations, others;
+        directives = [];
         declarations = [];
         others = [];
         for (i = 0, iz = array.length; i < iz; ++i) {
             node = array[i];
             if (node.type === Syntax.FunctionDeclaration) {
-                if (declarations.length !== i) {
+                if ((declarations.length + directives.length) !== i) {
                     modified = true;
                 }
                 declarations.push(node);
+            } else if (node.type === Syntax.DirectiveStatement) {
+                directives.push(node);
             } else {
                 others.push(node);
             }
         }
-        return declarations.concat(others);
+        return directives.concat(declarations, others);
     }
 
     function reorderingFunctionDeclarations(tree, options) {
@@ -2765,14 +2937,8 @@ require.define("/lib/pass/reordering-function-declarations.js",function(require,
             options = { destructive: false };
         }
 
-        if (options.destructive) {
-            result = tree;
-        } else {
-            result = common.deepCopy(tree);
-        }
-
+        result = options.destructive ? tree : common.deepCopy(tree);
         modified = false;
-
 
         common.traverse(result, {
             leave: function leave(node) {
@@ -3303,8 +3469,8 @@ require.define("/lib/pass/transform-to-sequence-expression.js",function(require,
     common = require('../common');
     Syntax = common.Syntax;
 
-    function transform(node, directiveCheck) {
-        var i, iz, expressions, stmt, expr, prev, body, prologue;
+    function transform(node) {
+        var i, iz, expressions, stmt, prev, body;
 
         function constructSeq(expressions, stmt) {
             var seq;
@@ -3328,24 +3494,10 @@ require.define("/lib/pass/transform-to-sequence-expression.js",function(require,
 
         body = [];
         expressions = [];
-        prologue = true;
 
         for (i = 0, iz = node.body.length; i < iz; ++i) {
             prev = stmt;
             stmt = node.body[i];
-
-            if (directiveCheck && prologue) {
-                if (stmt.type === Syntax.ExpressionStatement) {
-                    expr = stmt.expression;
-                    if (expr.type === Syntax.Literal && typeof expr.value === 'string') {
-                        // This is directive like 'use strict'.
-                        // So we should not reduce it to sequence expression.
-                        body.push(stmt);
-                        continue;
-                    }
-                }
-                prologue = false;
-            }
 
             if (stmt.type === Syntax.ExpressionStatement) {
                 expressions.push(stmt.expression);
@@ -3402,15 +3554,13 @@ require.define("/lib/pass/transform-to-sequence-expression.js",function(require,
 
         modified = false;
         common.traverse(result, {
-            enter: function enter(node, parent) {
-                var i, iz, directiveCheck;
-
-                directiveCheck = node.type === Syntax.Program || parent.type === Syntax.FunctionDeclaration || parent.type === Syntax.FunctionExpression;
+            enter: function enter(node) {
+                var i, iz;
 
                 switch (node.type) {
                 case Syntax.BlockStatement:
                 case Syntax.Program:
-                    transform(node, directiveCheck);
+                    transform(node);
                     break;
                 }
             }
@@ -4807,23 +4957,18 @@ require.define("/lib/pass/remove-side-effect-free-expressions.js",function(requi
                 if (!isResultNeeded(res, scope)) {
                     expr = res.expression;
                     switch (expr.type) {
-                    // TODO(Constellation)
-                    // After directive problem is solved, we should insert
-                    // directive check.
                     case Syntax.Literal:
-                        if (typeof expr.value !== 'string') {
-                            modified = true;
-                            return common.moveLocation(res, {
-                                type: Syntax.EmptyStatement
-                            });
-                        }
+                        modified = true;
+                        res = common.moveLocation(res, {
+                            type: Syntax.EmptyStatement
+                        });
                         break;
 
                     case Syntax.Identifier:
                         ref = scope.resolve(expr);
                         if (ref && ref.isStatic()) {
                             modified = true;
-                            return common.moveLocation(res, {
+                            res = common.moveLocation(res, {
                                 type: Syntax.EmptyStatement
                             });
                         }
@@ -4832,10 +4977,11 @@ require.define("/lib/pass/remove-side-effect-free-expressions.js",function(requi
                     default:
                         if (common.SpecialNode.isUndefined(expr) || common.SpecialNode.isNaN(expr) || common.SpecialNode.isNegative(expr)) {
                             modified = true;
-                            return common.moveLocation(res, {
+                            res = common.moveLocation(res, {
                                 type: Syntax.EmptyStatement
                             });
                         }
+                        break;
                     }
                 }
                 return res;
@@ -4861,6 +5007,7 @@ require.define("/lib/pass/remove-side-effect-free-expressions.js",function(requi
 });
 
 require.define("/lib/pass/remove-context-sensitive-expressions.js",function(require,module,exports,__dirname,__filename,process,global){/*
+  Copyright (C) 2012 Mihai Bazon <mihai.bazon@gmail.com>
   Copyright (C) 2012 Yusuke Suzuki <utatane.tea@gmail.com>
 
   Redistribution and use in source and binary forms, with or without
@@ -4905,13 +5052,20 @@ require.define("/lib/pass/remove-context-sensitive-expressions.js",function(requ
                     continue;
                 }
             } else if (expr.type === Syntax.LogicalExpression) {
-                if (expr.left.type === Syntax.UnaryExpression) {
-                    if (expr.left.operator === '!') {
-                        // !cond && ok() => cond || ok()
-                        modified = true;
-                        expr.left = expr.left.argument;
-                        expr.operator = (expr.operator === '||') ? '&&' : '||';
-                    }
+                if (expr.left.type === Syntax.UnaryExpression && expr.left.operator === '!' &&
+                    expr.right.type === Syntax.UnaryExpression && expr.right.operator === '!') {
+                    // !cond && !ok() => !(cond || ok())
+                    // this introduces more optimizations
+                    modified = true;
+                    expr.left = expr.left.argument;
+                    expr.right = expr.right.argument;
+                    expr.operator = (expr.operator === '||') ? '&&' : '||';
+                    expr = common.moveLocation(expr, {
+                        type: Syntax.UnaryExpression,
+                        operator: '!',
+                        argument: expr
+                    });
+                    continue;
                 }
             } else if (expr.type === Syntax.ConditionalExpression) {
                 if (expr.test.type === Syntax.UnaryExpression && expr.test.operator === '!') {
@@ -4935,6 +5089,13 @@ require.define("/lib/pass/remove-context-sensitive-expressions.js",function(requ
                     modified = true;
                     expr = expr.argument;
                     continue;
+                }
+            } else if (expr.type === Syntax.LogicalExpression) {
+                if (expr.left.type === Syntax.UnaryExpression && expr.left.operator === '!') {
+                    // !cond && ok() => cond || ok()
+                    modified = true;
+                    expr.left = expr.left.argument;
+                    expr.operator = (expr.operator === '||') ? '&&' : '||';
                 }
             }
             break;
