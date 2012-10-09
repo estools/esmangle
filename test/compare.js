@@ -105,7 +105,9 @@ describe('compare mangling result', function () {
                         return false;
                     });
 
-                    tree = esmangle.optimize(tree, [ pass, { once: true, pass: post } ]);
+                    tree = esmangle.optimize(tree, [ pass, { once: true, pass: post } ], {
+                        directive: true
+                    });
                     tree = esmangle.mangle(tree, {
                         destructive: true
                     });
@@ -117,7 +119,8 @@ describe('compare mangling result', function () {
                             compact: true,
                             semicolons: false,
                             parentheses: false
-                        }
+                        },
+                        directive: true
                     });
                     expect(actual).to.be.equal(expected);
                 });

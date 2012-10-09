@@ -1,1 +1,1 @@
-function test(){'use strict';'use decimal'}
+'use strict'

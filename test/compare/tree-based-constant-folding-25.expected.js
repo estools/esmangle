@@ -1,1 +1,1 @@
-'object RegExp'
+('object RegExp')

@@ -48,7 +48,8 @@ argv._.forEach(function (filename) {
     content = fs.readFileSync(filename, 'utf-8');
     tree = esprima.parse(content, { loc: true });
     tree = esmangle.optimize(tree, null, {
-        destructive: true
+        destructive: true,
+        directive: true
     });
     tree = esmangle.mangle(tree, {
         destructive: true
@@ -62,7 +63,8 @@ argv._.forEach(function (filename) {
             semicolons: false,
             parentheses: false
         },
-        sourceMap: argv['source-map'] && filename
+        sourceMap: argv['source-map'] && filename,
+        directive: true
     }));
 });
 /* vim: set sw=4 ts=4 et tw=80 : */
