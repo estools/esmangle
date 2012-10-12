@@ -24,4 +24,5 @@ global.esmangle = require('../lib/esmangle');
     require('../lib/post/transform-infinity');
     require('../lib/post/rewrite-boolean');
     require('../lib/post/rewrite-conditional-expression');
+    require('../lib/post/drop-variable-definition');
 });

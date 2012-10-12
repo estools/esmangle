@@ -1,3 +1,8 @@
+/*{
+    "pass": [
+        "reordering-function-declarations"
+    ]
+}*/
 (function () {
     'use strict';
 
