@@ -2,7 +2,6 @@ npm-debug.log
 .DS_Store
 .vimrc.local
 t.js
-esprima.js
 .travis.yml
 .npmignore
 /tmp/
@@ -11,4 +10,5 @@ esprima.js
 /tools/
 /test/
 /cover_html/
+/coverage/
 /.coverage_data/
