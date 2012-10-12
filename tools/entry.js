@@ -5,6 +5,7 @@ global.esmangle = require('../lib/esmangle');
     require('../lib/pass/transform-dynamic-to-static-property-access');
     require('../lib/pass/transform-dynamic-to-static-property-definition');
     require('../lib/pass/transform-immediate-function-call');
+    require('../lib/pass/transform-logical-association');
     require('../lib/pass/reordering-function-declarations');
     require('../lib/pass/remove-unused-label');
     require('../lib/pass/remove-empty-statement');

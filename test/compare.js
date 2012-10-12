@@ -44,6 +44,7 @@ defaultPass = [
     esmangle.require('pass/transform-dynamic-to-static-property-access'),
     esmangle.require('pass/transform-dynamic-to-static-property-definition'),
     esmangle.require('pass/transform-immediate-function-call'),
+    esmangle.require('pass/transform-logical-association'),
     esmangle.require('pass/reordering-function-declarations'),
     esmangle.require('pass/remove-unused-label'),
     esmangle.require('pass/remove-empty-statement'),
