@@ -29,7 +29,7 @@ var fs = require('fs'),
     path = require('path'),
     root = path.join(path.dirname(fs.realpathSync(__filename)), '..'),
     // FIXME current esprima 0.9.9 has bug, so use dev 1.0.0
-    esprima = require(path.join(root, 'test', '3rdparty', 'esprima'),
+    esprima = require(path.join(root, 'test', '3rdparty', 'esprima')),
     escodegen = require('escodegen'),
     optimist = require('optimist'),
     esmangle,
