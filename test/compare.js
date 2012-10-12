@@ -27,7 +27,7 @@
 var fs = require('fs'),
     path = require('path'),
     root = path.join(path.dirname(fs.realpathSync(__filename)), '..'),
-    esprima = require(path.join(root, 'test', '3rdparty', 'esprima')),
+    esprima = require(path.join(root, 'lib', 'esprima')),
     escodegen = require('escodegen'),
     esmangle,
     chai = require('chai'),
