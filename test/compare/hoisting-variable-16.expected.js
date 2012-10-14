@@ -1,1 +1,1 @@
-new function(){var a=20;this}
+new function(a){a=20}
