@@ -59,7 +59,8 @@ defaultPass = [
     esmangle.require('pass/dead-code-elimination'),
     esmangle.require('pass/remove-side-effect-free-expressions'),
     esmangle.require('pass/remove-context-sensitive-expressions'),
-    esmangle.require('pass/drop-variable-definition')
+    esmangle.require('pass/drop-variable-definition'),
+    esmangle.require('pass/remove-unreachable-branch')
 ];
 
 defaultPost = [
