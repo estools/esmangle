@@ -1,0 +1,1 @@
+while(cond)ok(),ok()

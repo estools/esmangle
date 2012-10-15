@@ -1,1 +1,1 @@
-function test(){{var a;ok(test)}ok(a)}
+function test(){var a;ok(test),ok(a)}
