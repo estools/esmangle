@@ -47,6 +47,12 @@ argv = optimist.usage("Usage: $0 file")
     .describe('o', 'output file')
     .demand(1).argv;
 
+if (argv.output && Array.isArray(argv.output) && argv.output.length > 1) {
+    optimist.showHelp();
+    console.error('multiple output files are specified');
+    process.exit(1);
+}
+
 argv._.forEach(function (filename) {
     var content, tree, result;
     content = fs.readFileSync(filename, 'utf-8');
