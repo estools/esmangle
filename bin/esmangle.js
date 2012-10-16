@@ -42,10 +42,13 @@ esmangle = require(root);
 argv = optimist.usage("Usage: $0 file")
     .boolean('source-map')
     .describe('source-map', 'dump source-map')
+    .string('o')
+    .alias('o', 'output')
+    .describe('o', 'output file')
     .demand(1).argv;
 
 argv._.forEach(function (filename) {
-    var content, tree;
+    var content, tree, result;
     content = fs.readFileSync(filename, 'utf-8');
     tree = esprima.parse(content, { loc: true });
     tree = esmangle.optimize(tree, null, {
@@ -55,7 +58,7 @@ argv._.forEach(function (filename) {
     tree = esmangle.mangle(tree, {
         destructive: true
     });
-    console.log(escodegen.generate(tree, {
+    result = escodegen.generate(tree, {
         format: {
             renumber: true,
             hexadecimal: true,
@@ -66,6 +69,11 @@ argv._.forEach(function (filename) {
         },
         sourceMap: argv['source-map'] && filename,
         directive: true
-    }));
+    });
+    if (argv.output) {
+        fs.writeFile(argv.output, result);
+    } else {
+        console.log(result);
+    }
 });
 /* vim: set sw=4 ts=4 et tw=80 : */
