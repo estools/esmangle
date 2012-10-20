@@ -4,5 +4,5 @@ function test() {
     } else {
         var i = 20;
     }
-    ok(j);
+    ok(i, j);
 }

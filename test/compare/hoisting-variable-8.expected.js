@@ -1,1 +1,1 @@
-(function a(){var a=20}())
+void 0

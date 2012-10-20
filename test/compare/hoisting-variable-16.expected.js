@@ -1,1 +1,1 @@
-new function(a){a=20}
+new function(){var a=20;this.arguments}
