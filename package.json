@@ -24,7 +24,7 @@
     },
     "dependencies": {
         "esprima": ">= 1.0.0",
-        "escope": ">= 0.0.8",
+        "escope": ">= 0.0.9",
         "escodegen": ">= 0.0.12",
         "estraverse": ">= 0.0.3",
         "source-map": ">= 0.1.2",
