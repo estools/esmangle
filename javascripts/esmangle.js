@@ -428,7 +428,7 @@ require.define("/lib/esmangle.js",function(require,module,exports,__dirname,__fi
         annotateDirective;
 
     // Sync with package.json.
-    VERSION = '0.0.6-dev';
+    VERSION = '0.0.8-dev';
 
     escope = require('escope');
     common = require('./common');
@@ -553,6 +553,7 @@ require.define("/lib/esmangle.js",function(require,module,exports,__dirname,__fi
 
         common.traverse(tree, {
             leave: function leave(node) {
+                var expr;
                 if (node.type === Syntax.IfStatement && node.alternate) {
                     // force wrap up or not
                     if (node.consequent.type !== Syntax.BlockStatement) {
@@ -566,8 +567,14 @@ require.define("/lib/esmangle.js",function(require,module,exports,__dirname,__fi
                 }
                 if (!useDirectiveStatement && node.type === Syntax.DirectiveStatement) {
                     node.type = Syntax.ExpressionStatement;
-                    node.expression = node.directive;
+                    node.expression = common.moveLocation(node, {
+                        type: Syntax.Literal,
+                        value: node.value,
+                        raw: node.raw
+                    });
                     delete node.directive;
+                    delete node.value;
+                    delete node.raw;
                 }
             }
         });
@@ -647,6 +654,7 @@ require.define("/lib/esmangle.js",function(require,module,exports,__dirname,__fi
                     'pass/transform-dynamic-to-static-property-access',
                     'pass/transform-dynamic-to-static-property-definition',
                     'pass/transform-immediate-function-call',
+                    'pass/transform-logical-association',
                     'pass/reordering-function-declarations',
                     'pass/remove-unused-label',
                     'pass/remove-empty-statement',
@@ -662,6 +670,8 @@ require.define("/lib/esmangle.js",function(require,module,exports,__dirname,__fi
                     'pass/remove-side-effect-free-expressions',
                     'pass/remove-context-sensitive-expressions',
                     'pass/tree-based-constant-folding',
+                    'pass/drop-variable-definition',
+                    'pass/remove-unreachable-branch'
                 ].map(esmangle_require),
                 {
                     once: true,
@@ -767,16 +777,14 @@ require.define("/node_modules/escope/escope.js",function(require,module,exports,
 }(function (exports) {
     'use strict';
 
-    var Syntax,
-        isArray,
-        VisitorKeys,
-        VisitorOption,
-        VERSION,
+    var estraverse,
+        Syntax,
         hasOwnProperty,
         scope,
         scopes;
 
-    VERSION = '0.0.5';
+    estraverse = require('estraverse');
+    Syntax = estraverse.Syntax;
 
     function assert(cond, text) {
         if (!cond) {
@@ -788,108 +796,6 @@ require.define("/node_modules/escope/escope.js",function(require,module,exports,
         throw new Error('Unreachable point. logically broken.');
     }
 
-    Syntax = {
-        AssignmentExpression: 'AssignmentExpression',
-        ArrayExpression: 'ArrayExpression',
-        BlockStatement: 'BlockStatement',
-        BinaryExpression: 'BinaryExpression',
-        BreakStatement: 'BreakStatement',
-        CallExpression: 'CallExpression',
-        CatchClause: 'CatchClause',
-        ConditionalExpression: 'ConditionalExpression',
-        ContinueStatement: 'ContinueStatement',
-        DirectiveStatement: 'DirectiveStatement',
-        DoWhileStatement: 'DoWhileStatement',
-        DebuggerStatement: 'DebuggerStatement',
-        EmptyStatement: 'EmptyStatement',
-        ExpressionStatement: 'ExpressionStatement',
-        ForStatement: 'ForStatement',
-        ForInStatement: 'ForInStatement',
-        FunctionDeclaration: 'FunctionDeclaration',
-        FunctionExpression: 'FunctionExpression',
-        Identifier: 'Identifier',
-        IfStatement: 'IfStatement',
-        Literal: 'Literal',
-        LabeledStatement: 'LabeledStatement',
-        LogicalExpression: 'LogicalExpression',
-        MemberExpression: 'MemberExpression',
-        NewExpression: 'NewExpression',
-        ObjectExpression: 'ObjectExpression',
-        Program: 'Program',
-        Property: 'Property',
-        ReturnStatement: 'ReturnStatement',
-        SequenceExpression: 'SequenceExpression',
-        SwitchStatement: 'SwitchStatement',
-        SwitchCase: 'SwitchCase',
-        ThisExpression: 'ThisExpression',
-        ThrowStatement: 'ThrowStatement',
-        TryStatement: 'TryStatement',
-        UnaryExpression: 'UnaryExpression',
-        UpdateExpression: 'UpdateExpression',
-        VariableDeclaration: 'VariableDeclaration',
-        VariableDeclarator: 'VariableDeclarator',
-        WhileStatement: 'WhileStatement',
-        WithStatement: 'WithStatement'
-    };
-
-    // removable traverse function
-
-    isArray = Array.isArray;
-    if (!isArray) {
-        isArray = function isArray(array) {
-            return Object.prototype.toString.call(array) === '[object Array]';
-        };
-    }
-
-    VisitorKeys = {
-        AssignmentExpression: ['left', 'right'],
-        ArrayExpression: ['elements'],
-        BlockStatement: ['body'],
-        BinaryExpression: ['left', 'right'],
-        BreakStatement: ['label'],
-        CallExpression: ['callee', 'arguments'],
-        CatchClause: ['param', 'body'],
-        ConditionalExpression: ['test', 'consequent', 'alternate'],
-        ContinueStatement: ['label'],
-        DirectiveStatement: ['directive'],
-        DoWhileStatement: ['body', 'test'],
-        DebuggerStatement: [],
-        EmptyStatement: [],
-        ExpressionStatement: ['expression'],
-        ForStatement: ['init', 'test', 'update', 'body'],
-        ForInStatement: ['left', 'right', 'body'],
-        FunctionDeclaration: ['id', 'params', 'body'],
-        FunctionExpression: ['id', 'params', 'body'],
-        Identifier: [],
-        IfStatement: ['test', 'consequent', 'alternate'],
-        Literal: [],
-        LabeledStatement: ['label', 'body'],
-        LogicalExpression: ['left', 'right'],
-        MemberExpression: ['object', 'property'],
-        NewExpression: ['callee', 'arguments'],
-        ObjectExpression: ['properties'],
-        Program: ['body'],
-        Property: ['key', 'value'],
-        ReturnStatement: ['argument'],
-        SequenceExpression: ['expressions'],
-        SwitchStatement: ['discriminant', 'cases'],
-        SwitchCase: ['test', 'consequent'],
-        ThisExpression: [],
-        ThrowStatement: ['argument'],
-        TryStatement: ['block', 'handlers', 'finalizer'],
-        UnaryExpression: ['argument'],
-        UpdateExpression: ['argument'],
-        VariableDeclaration: ['declarations'],
-        VariableDeclarator: ['id', 'init'],
-        WhileStatement: ['test', 'body'],
-        WithStatement: ['object', 'body']
-    };
-
-    VisitorOption = {
-        Break: 1,
-        Skip: 2
-    };
-
     hasOwnProperty = (function () {
         var pred = Object.prototype.hasOwnProperty;
         return function hasOwnProperty(obj, name) {
@@ -897,81 +803,61 @@ require.define("/node_modules/escope/escope.js",function(require,module,exports,
         };
     }());
 
-    function traverse(top, visitor) {
-        var worklist, leavelist, node, ret, current, current2, candidates, candidate, marker = {};
-
-        worklist = [ top ];
-        leavelist = [ null ];
-
-        while (worklist.length) {
-            node = worklist.pop();
-
-            if (node === marker) {
-                node = leavelist.pop();
-                if (visitor.leave) {
-                    ret = visitor.leave(node, leavelist[leavelist.length - 1]);
-                } else {
-                    ret = undefined;
-                }
-                if (ret === VisitorOption.Break) {
-                    return;
-                }
-            } else if (node) {
-                if (visitor.enter) {
-                    ret = visitor.enter(node, leavelist[leavelist.length - 1]);
-                } else {
-                    ret = undefined;
-                }
-
-                if (ret === VisitorOption.Break) {
-                    return;
-                }
-
-                worklist.push(marker);
-                leavelist.push(node);
-
-                if (ret !== VisitorOption.Skip) {
-                    candidates = VisitorKeys[node.type];
-                    current = candidates.length;
-                    while ((current -= 1) >= 0) {
-                        candidate = node[candidates[current]];
-                        if (candidate) {
-                            if (isArray(candidate)) {
-                                current2 = candidate.length;
-                                while ((current2 -= 1) >= 0) {
-                                    if (candidate[current2]) {
-                                        worklist.push(candidate[current2]);
-                                    }
-                                }
-                            } else {
-                                worklist.push(candidate);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    function Reference(ident, scope) {
+    function Reference(ident, scope, flag, writeExpr) {
         this.identifier = ident;
         this.from = scope;
         this.tainted = false;
         this.resolved = null;
+        this.flag = flag;
+        if (this.isWrite()) {
+            this.writeExpr = writeExpr;
+        }
     }
+
+    Reference.READ = 0x1;
+    Reference.WRITE = 0x2;
+    Reference.RW = 0x3;
 
     Reference.prototype.isStatic = function isStatic() {
         return !this.tainted && this.resolved && this.resolved.scope.isStatic();
+    };
+
+    Reference.prototype.isWrite = function isWrite() {
+        return this.flag & Reference.WRITE;
+    };
+
+    Reference.prototype.isRead = function isRead() {
+        return this.flag & Reference.READ;
+    };
+
+    Reference.prototype.isReadOnly = function isReadOnly() {
+        return this.flag === Reference.READ;
+    };
+
+    Reference.prototype.isWriteOnly = function isWriteOnly() {
+        return this.flag === Reference.WRITE;
+    };
+
+    Reference.prototype.isReadWrite = function isReadWrite() {
+        return this.flag === Reference.RW;
     };
 
     function Variable(name, scope) {
         this.name = name;
         this.identifiers = [];
         this.references = [];
+
+        this.defs = [];
+
         this.tainted = false;
         this.stack = true;
         this.scope = scope;
     }
+
+    Variable.CatchClause = 'CatchClause';
+    Variable.Parameter = 'Parameter';
+    Variable.FunctionName = 'FunctionName';
+    Variable.Variable = 'Variable';
 
     function Scope(block, opt) {
         var variable;
@@ -996,7 +882,11 @@ require.define("/node_modules/escope/escope.js",function(require,module,exports,
         this.thisFound = false;
 
         if (opt.naming) {
-            this.__define(block.id);
+            this.__define(block.id, {
+                type: Variable.FunctionName,
+                name: block.id,
+                node: block
+            });
             this.functionExpressionScope = true;
         } else {
             if (this.type === 'function') {
@@ -1076,27 +966,29 @@ require.define("/node_modules/escope/escope.js",function(require,module,exports,
         this.through.push(ref);
     };
 
-    Scope.prototype.__define = function __define(node) {
+    Scope.prototype.__define = function __define(node, info) {
         var name, variable;
         if (node && node.type === Syntax.Identifier) {
             name = node.name;
             if (!hasOwnProperty(this.set, name)) {
                 variable = new Variable(name, this);
                 variable.identifiers.push(node);
+                variable.defs.push(info);
                 this.set[name] = variable;
                 this.variables.push(variable);
             } else {
                 variable = this.set[name];
                 variable.identifiers.push(node);
+                variable.defs.push(info);
             }
         }
     };
 
-    Scope.prototype.__referencing = function __referencing(node) {
+    Scope.prototype.__referencing = function __referencing(node, assign, writeExpr) {
         var ref;
         // because Array element may be null
         if (node && node.type === Syntax.Identifier) {
-            ref = new Reference(node, this);
+            ref = new Reference(node, this, assign || Reference.READ, writeExpr);
             this.references.push(ref);
             this.left.push(ref);
         }
@@ -1206,7 +1098,7 @@ require.define("/node_modules/escope/escope.js",function(require,module,exports,
         if (this.attached) {
             return node.__$escope$__ || null;
         }
-        if (Scope.isRequired(node)) {
+        if (Scope.isScopeRequired(node)) {
             for (i = 0, iz = this.scopes.length; i < iz; ++i) {
                 scope = this.scopes[i];
                 if (!scope.functionExpressionScope) {
@@ -1253,8 +1145,12 @@ require.define("/node_modules/escope/escope.js",function(require,module,exports,
         this.attached = false;
     };
 
-    Scope.isRequired = function isRequired(node) {
-        return node.type === Syntax.Program || node.type === Syntax.FunctionExpression || node.type === Syntax.FunctionDeclaration || node.type === Syntax.WithStatement || node.type === Syntax.CatchClause;
+    Scope.isScopeRequired = function isScopeRequired(node) {
+        return Scope.isVariableScopeRequired(node) || node.type === Syntax.WithStatement || node.type === Syntax.CatchClause;
+    };
+
+    Scope.isVariableScopeRequired = function isVariableScopeRequired(node) {
+        return node.type === Syntax.Program || node.type === Syntax.FunctionExpression || node.type === Syntax.FunctionDeclaration;
     };
 
     function analyze(tree) {
@@ -1262,16 +1158,16 @@ require.define("/node_modules/escope/escope.js",function(require,module,exports,
         scope = null;
 
         // attach scope and collect / resolve names
-        traverse(tree, {
-            enter: function enter(node) {
-                var i, iz;
-                if (Scope.isRequired(node)) {
+        estraverse.traverse(tree, {
+            enter: function enter(node, parent) {
+                var i, iz, decl;
+                if (Scope.isScopeRequired(node)) {
                     new Scope(node, {});
                 }
 
                 switch (node.type) {
                 case Syntax.AssignmentExpression:
-                    scope.__referencing(node.left);
+                    scope.__referencing(node.left, Reference.WRITE, node.right);
                     scope.__referencing(node.right);
                     break;
 
@@ -1305,7 +1201,11 @@ require.define("/node_modules/escope/escope.js",function(require,module,exports,
                     break;
 
                 case Syntax.CatchClause:
-                    scope.__define(node.param);
+                    scope.__define(node.param, {
+                        type: Variable.CatchClause,
+                        name: node.param,
+                        node: node
+                    });
                     break;
 
                 case Syntax.ConditionalExpression:
@@ -1341,22 +1241,40 @@ require.define("/node_modules/escope/escope.js",function(require,module,exports,
                     break;
 
                 case Syntax.ForInStatement:
-                    scope.__referencing(node.left);
+                    if (node.left.type === Syntax.VariableDeclaration) {
+                        scope.__referencing(node.left.declarations[0].id, Reference.WRITE, null);
+                    } else {
+                        scope.__referencing(node.left, Reference.WRITE, null);
+                    }
                     scope.__referencing(node.right);
                     break;
 
                 case Syntax.FunctionDeclaration:
                     // FunctionDeclaration name is defined in upper scope
-                    scope.upper.__define(node.id);
+                    scope.upper.__define(node.id, {
+                        type: Variable.FunctionName,
+                        name: node.id,
+                        node: node
+                    });
                     for (i = 0, iz = node.params.length; i < iz; ++i) {
-                        scope.__define(node.params[i]);
+                        scope.__define(node.params[i], {
+                            type: Variable.Parameter,
+                            name: node.params[i],
+                            node: node,
+                            index: i
+                        });
                     }
                     break;
 
                 case Syntax.FunctionExpression:
                     // id is defined in upper scope
                     for (i = 0, iz = node.params.length; i < iz; ++i) {
-                        scope.__define(node.params[i]);
+                        scope.__define(node.params[i], {
+                            type: Variable.Parameter,
+                            name: node.params[i],
+                            node: node,
+                            index: i
+                        });
                     }
                     break;
 
@@ -1436,15 +1354,28 @@ require.define("/node_modules/escope/escope.js",function(require,module,exports,
                     break;
 
                 case Syntax.UpdateExpression:
-                    scope.__referencing(node.argument);
+                    scope.__referencing(node.argument, Reference.RW, null);
                     break;
 
                 case Syntax.VariableDeclaration:
+                    for (i = 0, iz = node.declarations.length; i < iz; ++i) {
+                        decl = node.declarations[i];
+                        scope.variableScope.__define(decl.id, {
+                            type: Variable.Variable,
+                            name: decl.id,
+                            node: decl,
+                            index: i,
+                            parent: node
+                        });
+                        if (decl.init) {
+                            // initializer is found
+                            scope.__referencing(decl.id, Reference.WRITE, decl.init);
+                            scope.__referencing(decl.init);
+                        }
+                    }
                     break;
 
                 case Syntax.VariableDeclarator:
-                    scope.variableScope.__define(node.id);
-                    scope.__referencing(node.init);
                     break;
 
                 case Syntax.WhileStatement:
@@ -1466,15 +1397,310 @@ require.define("/node_modules/escope/escope.js",function(require,module,exports,
         assert(scope === null);
 
         return new ScopeManager(scopes);
-    };
+    }
 
-    exports.version = VERSION;
+    exports.version = '0.0.8';
     exports.Reference = Reference;
     exports.Variable = Variable;
     exports.Scope = Scope;
     exports.ScopeManager = ScopeManager;
     exports.analyze = analyze;
 }, this));
+/* vim: set sw=4 ts=4 et tw=80 : */
+
+});
+
+require.define("/node_modules/estraverse/package.json",function(require,module,exports,__dirname,__filename,process,global){module.exports = {"main":"estraverse.js"}
+});
+
+require.define("/node_modules/estraverse/estraverse.js",function(require,module,exports,__dirname,__filename,process,global){/*
+  Copyright (C) 2012 Yusuke Suzuki <utatane.tea@gmail.com>
+  Copyright (C) 2012 Ariya Hidayat <ariya.hidayat@gmail.com>
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+/*jslint bitwise:true */
+/*global exports:true, define:true, window:true */
+(function (factory) {
+    'use strict';
+
+    // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
+    // and plain browser loading,
+    if (typeof define === 'function' && define.amd) {
+        define(['exports'], factory);
+    } else if (typeof exports !== 'undefined') {
+        factory(exports);
+    } else {
+        factory((window.estraverse = {}));
+    }
+}(function (exports) {
+    'use strict';
+
+    var Syntax,
+        isArray,
+        VisitorOption,
+        VisitorKeys;
+
+    Syntax = {
+        AssignmentExpression: 'AssignmentExpression',
+        ArrayExpression: 'ArrayExpression',
+        BlockStatement: 'BlockStatement',
+        BinaryExpression: 'BinaryExpression',
+        BreakStatement: 'BreakStatement',
+        CallExpression: 'CallExpression',
+        CatchClause: 'CatchClause',
+        ConditionalExpression: 'ConditionalExpression',
+        ContinueStatement: 'ContinueStatement',
+        DebuggerStatement: 'DebuggerStatement',
+        DirectiveStatement: 'DirectiveStatement',
+        DoWhileStatement: 'DoWhileStatement',
+        EmptyStatement: 'EmptyStatement',
+        ExpressionStatement: 'ExpressionStatement',
+        ForStatement: 'ForStatement',
+        ForInStatement: 'ForInStatement',
+        FunctionDeclaration: 'FunctionDeclaration',
+        FunctionExpression: 'FunctionExpression',
+        Identifier: 'Identifier',
+        IfStatement: 'IfStatement',
+        Literal: 'Literal',
+        LabeledStatement: 'LabeledStatement',
+        LogicalExpression: 'LogicalExpression',
+        MemberExpression: 'MemberExpression',
+        NewExpression: 'NewExpression',
+        ObjectExpression: 'ObjectExpression',
+        Program: 'Program',
+        Property: 'Property',
+        ReturnStatement: 'ReturnStatement',
+        SequenceExpression: 'SequenceExpression',
+        SwitchStatement: 'SwitchStatement',
+        SwitchCase: 'SwitchCase',
+        ThisExpression: 'ThisExpression',
+        ThrowStatement: 'ThrowStatement',
+        TryStatement: 'TryStatement',
+        UnaryExpression: 'UnaryExpression',
+        UpdateExpression: 'UpdateExpression',
+        VariableDeclaration: 'VariableDeclaration',
+        VariableDeclarator: 'VariableDeclarator',
+        WhileStatement: 'WhileStatement',
+        WithStatement: 'WithStatement'
+    };
+
+    isArray = Array.isArray;
+    if (!isArray) {
+        isArray = function isArray(array) {
+            return Object.prototype.toString.call(array) === '[object Array]';
+        };
+    }
+
+    VisitorKeys = {
+        AssignmentExpression: ['left', 'right'],
+        ArrayExpression: ['elements'],
+        BlockStatement: ['body'],
+        BinaryExpression: ['left', 'right'],
+        BreakStatement: ['label'],
+        CallExpression: ['callee', 'arguments'],
+        CatchClause: ['param', 'body'],
+        ConditionalExpression: ['test', 'consequent', 'alternate'],
+        ContinueStatement: ['label'],
+        DebuggerStatement: [],
+        DirectiveStatement: [],
+        DoWhileStatement: ['body', 'test'],
+        EmptyStatement: [],
+        ExpressionStatement: ['expression'],
+        ForStatement: ['init', 'test', 'update', 'body'],
+        ForInStatement: ['left', 'right', 'body'],
+        FunctionDeclaration: ['id', 'params', 'body'],
+        FunctionExpression: ['id', 'params', 'body'],
+        Identifier: [],
+        IfStatement: ['test', 'consequent', 'alternate'],
+        Literal: [],
+        LabeledStatement: ['label', 'body'],
+        LogicalExpression: ['left', 'right'],
+        MemberExpression: ['object', 'property'],
+        NewExpression: ['callee', 'arguments'],
+        ObjectExpression: ['properties'],
+        Program: ['body'],
+        Property: ['key', 'value'],
+        ReturnStatement: ['argument'],
+        SequenceExpression: ['expressions'],
+        SwitchStatement: ['discriminant', 'cases'],
+        SwitchCase: ['test', 'consequent'],
+        ThisExpression: [],
+        ThrowStatement: ['argument'],
+        TryStatement: ['block', 'handlers', 'finalizer'],
+        UnaryExpression: ['argument'],
+        UpdateExpression: ['argument'],
+        VariableDeclaration: ['declarations'],
+        VariableDeclarator: ['id', 'init'],
+        WhileStatement: ['test', 'body'],
+        WithStatement: ['object', 'body']
+    };
+
+    VisitorOption = {
+        Break: 1,
+        Skip: 2
+    };
+
+    function traverse(top, visitor) {
+        var worklist, leavelist, node, ret, current, current2, candidates, candidate, marker = {};
+
+        worklist = [ top ];
+        leavelist = [ null ];
+
+        while (worklist.length) {
+            node = worklist.pop();
+
+            if (node === marker) {
+                node = leavelist.pop();
+                if (visitor.leave) {
+                    ret = visitor.leave(node, leavelist[leavelist.length - 1]);
+                } else {
+                    ret = undefined;
+                }
+                if (ret === VisitorOption.Break) {
+                    return;
+                }
+            } else if (node) {
+                if (visitor.enter) {
+                    ret = visitor.enter(node, leavelist[leavelist.length - 1]);
+                } else {
+                    ret = undefined;
+                }
+
+                if (ret === VisitorOption.Break) {
+                    return;
+                }
+
+                worklist.push(marker);
+                leavelist.push(node);
+
+                if (ret !== VisitorOption.Skip) {
+                    candidates = VisitorKeys[node.type];
+                    current = candidates.length;
+                    while ((current -= 1) >= 0) {
+                        candidate = node[candidates[current]];
+                        if (candidate) {
+                            if (isArray(candidate)) {
+                                current2 = candidate.length;
+                                while ((current2 -= 1) >= 0) {
+                                    if (candidate[current2]) {
+                                        worklist.push(candidate[current2]);
+                                    }
+                                }
+                            } else {
+                                worklist.push(candidate);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    function replace(top, visitor) {
+        var worklist, leavelist, node, target, tuple, ret, current, current2, candidates, candidate, marker = {}, result;
+
+        result = {
+            top: top
+        };
+
+        tuple = [ top, result, 'top' ];
+        worklist = [ tuple ];
+        leavelist = [ tuple ];
+
+        function notify(v) {
+            ret = v;
+        }
+
+        while (worklist.length) {
+            tuple = worklist.pop();
+
+            if (tuple === marker) {
+                tuple = leavelist.pop();
+                ret = undefined;
+                if (visitor.leave) {
+                    node = tuple[0];
+                    target = visitor.leave(tuple[0], leavelist[leavelist.length - 1][0], notify);
+                    if (target !== undefined) {
+                        node = target;
+                    }
+                    tuple[1][tuple[2]] = node;
+                }
+                if (ret === VisitorOption.Break) {
+                    return result.top;
+                }
+            } else if (tuple[0]) {
+                ret = undefined;
+                node = tuple[0];
+                if (visitor.enter) {
+                    target = visitor.enter(tuple[0], leavelist[leavelist.length - 1][0], notify);
+                    if (target !== undefined) {
+                        node = target;
+                    }
+                    tuple[1][tuple[2]] = node;
+                    tuple[0] = node;
+                }
+
+                if (ret === VisitorOption.Break) {
+                    return result.top;
+                }
+
+                if (tuple[0]) {
+                    worklist.push(marker);
+                    leavelist.push(tuple);
+
+                    if (ret !== VisitorOption.Skip) {
+                        candidates = VisitorKeys[node.type];
+                        current = candidates.length;
+                        while ((current -= 1) >= 0) {
+                            candidate = node[candidates[current]];
+                            if (candidate) {
+                                if (isArray(candidate)) {
+                                    current2 = candidate.length;
+                                    while ((current2 -= 1) >= 0) {
+                                        if (candidate[current2]) {
+                                            worklist.push([candidate[current2], candidate, current2]);
+                                        }
+                                    }
+                                } else {
+                                    worklist.push([candidate, node, candidates[current]]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return result.top;
+    }
+
+    exports.version = '0.0.3';
+    exports.Syntax = Syntax;
+    exports.traverse = traverse;
+    exports.replace = replace;
+    exports.VisitorKeys = VisitorKeys;
+    exports.VisitorOption = VisitorOption;
+}));
 /* vim: set sw=4 ts=4 et tw=80 : */
 
 });
@@ -1516,10 +1742,12 @@ require.define("/lib/common.js",function(require,module,exports,__dirname,__file
         sameValue,
         hasOwnProperty,
         estraverse,
+        escope,
         NameSequence,
         ZeroSequenceCache;
 
     estraverse = require('estraverse');
+    escope = require('escope');
 
     Syntax = estraverse.Syntax;
 
@@ -1951,6 +2179,73 @@ require.define("/lib/common.js",function(require,module,exports,__dirname,__file
         return true;
     }
 
+    function delegateVariableDeclarations(stmt, func) {
+        var i, iz, j, jz, decl, decls, target, elements;
+
+        decls = [];
+
+        estraverse.traverse(stmt, {
+            enter: function (node) {
+                var i, iz, decl;
+                if (node.type === Syntax.VariableDeclaration) {
+                    if (node.kind === 'let' || node.kind === 'const') {
+                        return;
+                    }
+                    for (i = 0, iz = node.declarations.length; i < iz; ++i) {
+                        decl = node.declarations[i];
+                        delete decl.init;
+                        decls.push(decl);
+                    }
+                    return estraverse.VisitorOption.Skip;
+                } else if (escope.Scope.isVariableScopeRequired(node)) {
+                    return estraverse.VisitorOption.Skip;
+                }
+            }
+        });
+
+        if (!decls.length) {
+            return null;
+        }
+
+        target = null;
+
+        estraverse.traverse(func.body, {
+            enter: function (node, parent) {
+                if (node === stmt) {
+                    return estraverse.VisitorOption.Skip;
+                } else if (escope.Scope.isVariableScopeRequired(node)) {
+                    return estraverse.VisitorOption.Skip;
+                } else if (node.type === Syntax.VariableDeclaration && node.kind === 'var') {
+                    // list is not allowed
+                    if (parent.type !== Syntax.ForInStatement) {
+                        target = node;
+                        return estraverse.VisitorOption.Break;
+                    }
+                }
+            }
+        });
+
+        if (target) {
+            target.declarations = target.declarations.concat(decls);
+            return null;
+        } else {
+            return {
+                type: Syntax.VariableDeclaration,
+                kind: 'var',
+                declarations: decls
+            };
+        }
+    }
+
+    function isScopedDeclaration(node) {
+        if (node.type === Syntax.VariableDeclaration && (node.kind === 'let' || node.kind === 'const')) {
+            return true;
+        } else if (node.type === Syntax.FunctionDeclaration) {
+            return true;
+        }
+        return false;
+    }
+
     exports.deepCopy = deepCopy;
     exports.hasOwnProperty = hasOwnProperty;
     exports.stringRepeat = stringRepeat;
@@ -2006,302 +2301,11 @@ require.define("/lib/common.js",function(require,module,exports,__dirname,__file
         isReference: isReference,
         canExtractSequence: canExtractSequence
     };
+
+    exports.delegateVariableDeclarations = delegateVariableDeclarations;
+
+    exports.isScopedDeclaration = isScopedDeclaration;
 }());
-/* vim: set sw=4 ts=4 et tw=80 : */
-
-});
-
-require.define("/node_modules/estraverse/package.json",function(require,module,exports,__dirname,__filename,process,global){module.exports = {"main":"estraverse.js"}
-});
-
-require.define("/node_modules/estraverse/estraverse.js",function(require,module,exports,__dirname,__filename,process,global){/*
-  Copyright (C) 2012 Yusuke Suzuki <utatane.tea@gmail.com>
-  Copyright (C) 2012 Ariya Hidayat <ariya.hidayat@gmail.com>
-
-  Redistribution and use in source and binary forms, with or without
-  modification, are permitted provided that the following conditions are met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-
-  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-  ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
-  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
-
-/*jslint bitwise:true */
-/*global exports:true, define:true, window:true */
-(function (factory) {
-    'use strict';
-
-    // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
-    // and plain browser loading,
-    if (typeof define === 'function' && define.amd) {
-        define(['exports'], factory);
-    } else if (typeof exports !== 'undefined') {
-        factory(exports);
-    } else {
-        factory((window.estraverse = {}));
-    }
-}(function (exports) {
-    'use strict';
-
-    var Syntax,
-        isArray,
-        VisitorOption,
-        VisitorKeys;
-
-    Syntax = {
-        AssignmentExpression: 'AssignmentExpression',
-        ArrayExpression: 'ArrayExpression',
-        BlockStatement: 'BlockStatement',
-        BinaryExpression: 'BinaryExpression',
-        BreakStatement: 'BreakStatement',
-        CallExpression: 'CallExpression',
-        CatchClause: 'CatchClause',
-        ConditionalExpression: 'ConditionalExpression',
-        ContinueStatement: 'ContinueStatement',
-        DebuggerStatement: 'DebuggerStatement',
-        DirectiveStatement: 'DirectiveStatement',
-        DoWhileStatement: 'DoWhileStatement',
-        EmptyStatement: 'EmptyStatement',
-        ExpressionStatement: 'ExpressionStatement',
-        ForStatement: 'ForStatement',
-        ForInStatement: 'ForInStatement',
-        FunctionDeclaration: 'FunctionDeclaration',
-        FunctionExpression: 'FunctionExpression',
-        Identifier: 'Identifier',
-        IfStatement: 'IfStatement',
-        Literal: 'Literal',
-        LabeledStatement: 'LabeledStatement',
-        LogicalExpression: 'LogicalExpression',
-        MemberExpression: 'MemberExpression',
-        NewExpression: 'NewExpression',
-        ObjectExpression: 'ObjectExpression',
-        Program: 'Program',
-        Property: 'Property',
-        ReturnStatement: 'ReturnStatement',
-        SequenceExpression: 'SequenceExpression',
-        SwitchStatement: 'SwitchStatement',
-        SwitchCase: 'SwitchCase',
-        ThisExpression: 'ThisExpression',
-        ThrowStatement: 'ThrowStatement',
-        TryStatement: 'TryStatement',
-        UnaryExpression: 'UnaryExpression',
-        UpdateExpression: 'UpdateExpression',
-        VariableDeclaration: 'VariableDeclaration',
-        VariableDeclarator: 'VariableDeclarator',
-        WhileStatement: 'WhileStatement',
-        WithStatement: 'WithStatement'
-    };
-
-    isArray = Array.isArray;
-    if (!isArray) {
-        isArray = function isArray(array) {
-            return Object.prototype.toString.call(array) === '[object Array]';
-        };
-    }
-
-    VisitorKeys = {
-        AssignmentExpression: ['left', 'right'],
-        ArrayExpression: ['elements'],
-        BlockStatement: ['body'],
-        BinaryExpression: ['left', 'right'],
-        BreakStatement: ['label'],
-        CallExpression: ['callee', 'arguments'],
-        CatchClause: ['param', 'body'],
-        ConditionalExpression: ['test', 'consequent', 'alternate'],
-        ContinueStatement: ['label'],
-        DebuggerStatement: [],
-        DirectiveStatement: ['directive'],
-        DoWhileStatement: ['body', 'test'],
-        EmptyStatement: [],
-        ExpressionStatement: ['expression'],
-        ForStatement: ['init', 'test', 'update', 'body'],
-        ForInStatement: ['left', 'right', 'body'],
-        FunctionDeclaration: ['id', 'params', 'body'],
-        FunctionExpression: ['id', 'params', 'body'],
-        Identifier: [],
-        IfStatement: ['test', 'consequent', 'alternate'],
-        Literal: [],
-        LabeledStatement: ['label', 'body'],
-        LogicalExpression: ['left', 'right'],
-        MemberExpression: ['object', 'property'],
-        NewExpression: ['callee', 'arguments'],
-        ObjectExpression: ['properties'],
-        Program: ['body'],
-        Property: ['key', 'value'],
-        ReturnStatement: ['argument'],
-        SequenceExpression: ['expressions'],
-        SwitchStatement: ['discriminant', 'cases'],
-        SwitchCase: ['test', 'consequent'],
-        ThisExpression: [],
-        ThrowStatement: ['argument'],
-        TryStatement: ['block', 'handlers', 'finalizer'],
-        UnaryExpression: ['argument'],
-        UpdateExpression: ['argument'],
-        VariableDeclaration: ['declarations'],
-        VariableDeclarator: ['id', 'init'],
-        WhileStatement: ['test', 'body'],
-        WithStatement: ['object', 'body']
-    };
-
-    VisitorOption = {
-        Break: 1,
-        Skip: 2
-    };
-
-    function traverse(top, visitor) {
-        var worklist, leavelist, node, ret, current, current2, candidates, candidate, marker = {};
-
-        worklist = [ top ];
-        leavelist = [ null ];
-
-        while (worklist.length) {
-            node = worklist.pop();
-
-            if (node === marker) {
-                node = leavelist.pop();
-                if (visitor.leave) {
-                    ret = visitor.leave(node, leavelist[leavelist.length - 1]);
-                } else {
-                    ret = undefined;
-                }
-                if (ret === VisitorOption.Break) {
-                    return;
-                }
-            } else if (node) {
-                if (visitor.enter) {
-                    ret = visitor.enter(node, leavelist[leavelist.length - 1]);
-                } else {
-                    ret = undefined;
-                }
-
-                if (ret === VisitorOption.Break) {
-                    return;
-                }
-
-                worklist.push(marker);
-                leavelist.push(node);
-
-                if (ret !== VisitorOption.Skip) {
-                    candidates = VisitorKeys[node.type];
-                    current = candidates.length;
-                    while ((current -= 1) >= 0) {
-                        candidate = node[candidates[current]];
-                        if (candidate) {
-                            if (isArray(candidate)) {
-                                current2 = candidate.length;
-                                while ((current2 -= 1) >= 0) {
-                                    if (candidate[current2]) {
-                                        worklist.push(candidate[current2]);
-                                    }
-                                }
-                            } else {
-                                worklist.push(candidate);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    function replace(top, visitor) {
-        var worklist, leavelist, node, target, tuple, ret, current, current2, candidates, candidate, marker = {}, result;
-
-        result = {
-            top: top
-        };
-
-        tuple = [ top, result, 'top' ];
-        worklist = [ tuple ];
-        leavelist = [ tuple ];
-
-        function notify(v) {
-            ret = v;
-        }
-
-        while (worklist.length) {
-            tuple = worklist.pop();
-
-            if (tuple === marker) {
-                tuple = leavelist.pop();
-                ret = undefined;
-                if (visitor.leave) {
-                    node = tuple[0];
-                    target = visitor.leave(tuple[0], leavelist[leavelist.length - 1][0], notify);
-                    if (target !== undefined) {
-                        node = target;
-                    }
-                    tuple[1][tuple[2]] = node;
-                }
-                if (ret === VisitorOption.Break) {
-                    return result.top;
-                }
-            } else if (tuple[0]) {
-                ret = undefined;
-                node = tuple[0];
-                if (visitor.enter) {
-                    target = visitor.enter(tuple[0], leavelist[leavelist.length - 1][0], notify);
-                    if (target !== undefined) {
-                        node = target;
-                    }
-                    tuple[1][tuple[2]] = node;
-                    tuple[0] = node;
-                }
-
-                if (ret === VisitorOption.Break) {
-                    return result.top;
-                }
-
-                worklist.push(marker);
-                if (tuple[0]) {
-                    leavelist.push(tuple);
-
-                    if (ret !== VisitorOption.Skip) {
-                        candidates = VisitorKeys[node.type];
-                        current = candidates.length;
-                        while ((current -= 1) >= 0) {
-                            candidate = node[candidates[current]];
-                            if (candidate) {
-                                if (isArray(candidate)) {
-                                    current2 = candidate.length;
-                                    while ((current2 -= 1) >= 0) {
-                                        if (candidate[current2]) {
-                                            worklist.push([candidate[current2], candidate, current2]);
-                                        }
-                                    }
-                                } else {
-                                    worklist.push([candidate, node, candidates[current]]);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return result.top;
-    }
-
-    exports.version = '0.0.1';
-    exports.Syntax = Syntax;
-    exports.traverse = traverse;
-    exports.replace = replace;
-    exports.VisitorKeys = VisitorKeys;
-    exports.VisitorOption = VisitorOption;
-}));
 /* vim: set sw=4 ts=4 et tw=80 : */
 
 });
@@ -2351,6 +2355,84 @@ require.define("/lib/annotate-directive.js",function(require,module,exports,__di
         return false;
     }
 
+    function escapeAllowedCharacter(ch, next) {
+        var code = ch.charCodeAt(0), hex = code.toString(16), result = '\\';
+
+        switch (ch) {
+        case '\b':
+            result += 'b';
+            break;
+        case '\f':
+            result += 'f';
+            break;
+        case '\t':
+            result += 't';
+            break;
+        default:
+            if (code > 0xff) {
+                result += 'u' + '0000'.slice(hex.length) + hex;
+            } else if (ch === '\u0000' && '0123456789'.indexOf(next) < 0) {
+                result += '0';
+            } else if (ch === '\v') {
+                result += 'v';
+            } else {
+                result += 'x' + '00'.slice(hex.length) + hex;
+            }
+            break;
+        }
+
+        return result;
+    }
+
+    function escapeDisallowedCharacter(ch) {
+        var result = '\\';
+        switch (ch) {
+        case '\\':
+            result += '\\';
+            break;
+        case '\n':
+            result += 'n';
+            break;
+        case '\r':
+            result += 'r';
+            break;
+        case '\u2028':
+            result += 'u2028';
+            break;
+        case '\u2029':
+            result += 'u2029';
+            break;
+        default:
+            throw new Error('Incorrectly classified character');
+        }
+
+        return result;
+    }
+
+    function escapeString(str) {
+        var result = '', i, len, ch, next, singleQuotes = 0, doubleQuotes = 0, single;
+
+        if (typeof str[0] === 'undefined') {
+            str = common.stringToArray(str);
+        }
+
+        for (i = 0, len = str.length; i < len; i += 1) {
+            ch = str[i];
+            if (ch === '\'') {
+                result += '\\\'';
+            } else if ('\\\n\r\u2028\u2029'.indexOf(ch) >= 0) {
+                result += escapeDisallowedCharacter(ch);
+                continue;
+            } else if (!(ch >= ' ' && ch <= '~')) {
+                result += escapeAllowedCharacter(ch, str[i + 1]);
+                continue;
+            }
+            result += ch;
+        }
+
+        return result;
+    }
+
     function annotateDirective(tree, options) {
         var result;
 
@@ -2373,7 +2455,15 @@ require.define("/lib/annotate-directive.js",function(require,module,exports,__di
                     stmt = node.body[i];
                     if (isDirective(stmt)) {
                         stmt.type = Syntax.DirectiveStatement;
-                        stmt.directive = stmt.expression;
+                        if (stmt.expression.raw) {
+                            stmt.directive = stmt.expression.raw.substring(1, stmt.raw.length - 1);
+                            stmt.value = stmt.expression.value;
+                            stmt.raw = stmt.expression.raw;
+                        } else {
+                            stmt.directive = escapeString(stmt.expression.value);
+                            stmt.value = stmt.expression.value;
+                            stmt.raw = '\'' + stmt.directive + '\'';
+                        }
                         delete stmt.expression;
                     } else {
                         return;
@@ -2389,6 +2479,586 @@ require.define("/lib/annotate-directive.js",function(require,module,exports,__di
     module.exports = annotateDirective;
 }());
 /* vim: set sw=4 ts=4 et tw=80 : */
+
+});
+
+require.define("/lib/pass/tree-based-constant-folding.js",function(require,module,exports,__dirname,__filename,process,global){/*
+  Copyright (C) 2012 Yusuke Suzuki <utatane.tea@gmail.com>
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+/*jslint bitwise:true */
+/*global esmangle:true, module:true, define:true, require:true*/
+(function () {
+    'use strict';
+
+    var Syntax, common, evaluator, modified;
+
+    common = require('../common');
+    evaluator = require('../evaluator');
+    Syntax = common.Syntax;
+
+
+    function isModifiedConstant(node) {
+        // consider
+        //   (undefined) `void 0`
+        //   (negative value) `-1`,
+        //   (NaN) `0/0`
+        if (common.SpecialNode.isUndefined(node)) {
+            return false;
+        }
+        if (common.SpecialNode.isNegative(node)) {
+            return false;
+        }
+        if (common.SpecialNode.isNaN(node)) {
+            return false;
+        }
+        return evaluator.constant.isConstant(node, false);
+    }
+
+    function wrapNode(value) {
+        if (typeof value === 'number') {
+            if (isNaN(value)) {
+                return common.SpecialNode.generateNaN();
+            }
+            if (common.isNegative(value)) {
+                return common.SpecialNode.generateNegative(value);
+            }
+        }
+        if (value === undefined) {
+            return common.SpecialNode.generateUndefined();
+        }
+        return {
+            type: Syntax.Literal,
+            value: value
+        };
+    }
+
+    function isFoldableConditional(node) {
+        if (node.type !== Syntax.ConditionalExpression) {
+            return false;
+        }
+        return evaluator.constant.isConstant(node.consequent) || evaluator.constant.isConstant(node.alternate);
+    }
+
+    function foldConditional(node) {
+        var binary, unary, operator, left, right;
+        switch (node.type) {
+        case Syntax.BinaryExpression:
+            if (node.operator === 'in' || node.operator === 'instanceof') {
+                // cannot fold this
+                return node;
+            }
+
+            if (evaluator.constant.isConstant(node.left) && isFoldableConditional(node.right)) {
+                modified = true;
+                binary = node;
+                operator = binary.operator;
+                left = evaluator.constant.evaluate(binary.left);
+
+                node = node.right;
+                if (evaluator.constant.isConstant(node.consequent)) {
+                    node.consequent = wrapNode(evaluator.constant.doBinary(operator, left, evaluator.constant.evaluate(node.consequent)));
+                } else {
+                    // cannot fold left
+                    binary.right = node.consequent;
+                    node.consequent = binary;
+                }
+                if (evaluator.constant.isConstant(node.alternate)) {
+                    node.alternate = wrapNode(evaluator.constant.doBinary(operator, left, evaluator.constant.evaluate(node.alternate)));
+                } else {
+                    // cannot fold right
+                    binary.right = node.alternate;
+                    node.alternate = binary;
+                }
+            } else if (evaluator.constant.isConstant(node.right) && isFoldableConditional(node.left)) {
+                modified = true;
+                binary = node;
+                operator = binary.operator;
+                right = evaluator.constant.evaluate(binary.right);
+
+                node = node.left;
+                if (evaluator.constant.isConstant(node.consequent)) {
+                    node.consequent = wrapNode(evaluator.constant.doBinary(operator, evaluator.constant.evaluate(node.consequent), right));
+                } else {
+                    // cannot fold left
+                    binary.left = node.consequent;
+                    node.consequent = binary;
+                }
+                if (evaluator.constant.isConstant(node.alternate)) {
+                    node.alternate = wrapNode(evaluator.constant.doBinary(operator, evaluator.constant.evaluate(node.alternate), right));
+                } else {
+                    // cannot fold right
+                    binary.left = node.alternate;
+                    node.alternate = binary;
+                }
+            }
+            break;
+
+        case Syntax.LogicalExpression:
+            break;
+
+        case Syntax.UnaryExpression:
+            if (isFoldableConditional(node.argument)) {
+                modified = true;
+                unary = node;
+                operator = unary.operator;
+                node = unary.argument;
+                if (evaluator.constant.isConstant(node.consequent)) {
+                    node.consequent = wrapNode(evaluator.constant.doUnary(operator, evaluator.constant.evaluate(node.consequent)));
+                } else {
+                    // cannot fold left
+                    unary.argument = node.consequent;
+                    node.consequent = unary;
+                }
+                if (evaluator.constant.isConstant(node.alternate)) {
+                    node.alternate = wrapNode(evaluator.constant.doUnary(operator, evaluator.constant.evaluate(node.alternate)));
+                } else {
+                    // cannot fold right
+                    unary.argument = node.alternate;
+                    node.alternate = unary;
+                }
+            }
+            break;
+        }
+
+        return node;
+    }
+
+    function treeBasedConstantFolding(tree, options) {
+        var result;
+
+        if (options == null) {
+            options = { destructive: false };
+        }
+
+        result = (options.destructive) ? tree : common.deepCopy(tree);
+        modified = false;
+
+        result = common.replace(result, {
+            leave: function leave(node, parent) {
+                var con, alt;
+                switch (node.type) {
+                case Syntax.BinaryExpression:
+                case Syntax.LogicalExpression:
+                case Syntax.UnaryExpression:
+                    if (isModifiedConstant(node)) {
+                        modified = true;
+                        return common.moveLocation(node, wrapNode(evaluator.constant.evaluate(node)));
+                    }
+                    return foldConditional(node);
+
+                case Syntax.ConditionalExpression:
+                    if (evaluator.constant.isConstant(node.consequent) && evaluator.constant.isConstant(node.alternate)) {
+                        con = evaluator.constant.evaluate(node.consequent);
+                        alt = evaluator.constant.evaluate(node.alternate);
+                        if (common.sameValue(con, alt)) {
+                            modified = true;
+                            return common.moveLocation(node, {
+                                type: Syntax.SequenceExpression,
+                                expressions: [
+                                    node.test,
+                                    wrapNode(con)
+                                ]
+                            });
+                        }
+                    }
+                    break;
+                }
+            }
+        });
+
+        return {
+            result: result,
+            modified: modified
+        };
+    }
+
+    treeBasedConstantFolding.passName = 'tree-based-constant-folding';
+    module.exports = treeBasedConstantFolding;
+}());
+/* vim: set sw=4 ts=4 et tw=80 : */
+
+});
+
+require.define("/lib/evaluator.js",function(require,module,exports,__dirname,__filename,process,global){/*
+  Copyright (C) 2012 Yusuke Suzuki <utatane.tea@gmail.com>
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+(function () {
+    'use strict';
+
+    var Syntax, common;
+
+    common = require('./common');
+    Syntax = common.Syntax;
+
+    // constant
+
+    function isConstant(node, allowRegExp) {
+        if (node.type === Syntax.Literal) {
+            if (typeof node.value === 'object' && node.value !== null) {
+                // This is RegExp
+                return allowRegExp;
+            }
+            return true;
+        }
+        if (node.type === Syntax.UnaryExpression) {
+            if (node.operator === 'void' || node.operator === 'delete' || node.operator === '!' || node.operator === 'typeof') {
+                return isConstant(node.argument, true);
+            }
+            return isConstant(node.argument, false);
+        }
+        if (node.type === Syntax.BinaryExpression) {
+            if (node.operator === 'in' || node.operator === 'instanceof') {
+                return false;
+            }
+            return isConstant(node.left, false) && isConstant(node.right, false);
+        }
+        if (node.type === Syntax.LogicalExpression) {
+            return isConstant(node.left, true) && isConstant(node.right, true);
+        }
+        return false;
+    }
+
+    function getConstant(node) {
+        if (node.type === Syntax.Literal) {
+            return node.value;
+        }
+        if (node.type === Syntax.UnaryExpression) {
+            return doUnary(node.operator, getConstant(node.argument));
+        }
+        if (node.type === Syntax.BinaryExpression) {
+            return doBinary(node.operator, getConstant(node.left), getConstant(node.right));
+        }
+        if (node.type === Syntax.LogicalExpression) {
+            return doLogical(node.operator, getConstant(node.left), getConstant(node.right));
+        }
+        common.unreachable();
+    }
+
+    function doLogical(operator, left, right) {
+        if (operator === '||') {
+            return left || right;
+        }
+        return left && right;
+    }
+
+    function doUnary(operator, argument) {
+        switch (operator) {
+        case '+':
+            return +argument;
+        case '-':
+            return -argument;
+        case '~':
+            return ~argument;
+        case '!':
+            return !argument;
+        case 'delete':
+            // do delete on constant value (not considering identifier in this tree based constant folding)
+            return true;
+        case 'void':
+            return undefined;
+        case 'typeof':
+            return typeof argument;
+        }
+    }
+
+    function doBinary(operator, left, right) {
+        switch (operator) {
+        case '|':
+            return left | right;
+        case '^':
+            return left ^ right;
+        case '&':
+            return left & right;
+        case '==':
+            return left == right;
+        case '!=':
+            return left != right;
+        case '===':
+            return left === right;
+        case '!==':
+            return left !== right;
+        case '<':
+            return left < right;
+        case '>':
+            return left > right;
+        case '<=':
+            return left <= right;
+        case '>=':
+            return left >= right;
+        // case 'in':
+        //    return left in right;
+        // case 'instanceof':
+        //    return left instanceof right;
+        case '<<':
+            return left << right;
+        case '>>':
+            return left >> right;
+        case '>>>':
+            return left >>> right;
+        case '+':
+            return left + right;
+        case '-':
+            return left - right;
+        case '*':
+            return left * right;
+        case '/':
+            return left / right;
+        case '%':
+            return left % right;
+        }
+        common.unreachable();
+    }
+
+    exports.constant = {
+        doBinary: doBinary,
+        doUnary: doUnary,
+        doLogical: doLogical,
+        evaluate: getConstant,
+        isConstant: isConstant
+    };
+
+    // has side effect
+    function hasSideEffect(expr, scope) {
+        function visit(expr) {
+            var i, iz, ref;
+            switch (expr.type) {
+            case Syntax.AssignmentExpression:
+                return true;
+
+            case Syntax.ArrayExpression:
+                for (i = 0, iz = expr.elements.length; i < iz; ++i) {
+                    if (visit(expr.elements[i])) {
+                        return true;
+                    }
+                }
+                return false;
+
+            case Syntax.BinaryExpression:
+                return !isConstant(expr);
+
+            case Syntax.CallExpression:
+                return true;
+
+            case Syntax.ConditionalExpression:
+                return visit(expr.test) || visit(expr.consequent) || visit(expr.alternate);
+
+            case Syntax.FunctionExpression:
+                return false;
+
+            case Syntax.Identifier:
+                ref = scope.resolve(expr);
+                if (ref && ref.isStatic()) {
+                    return false;
+                }
+                return true;
+
+            case Syntax.Literal:
+                return false;
+
+            case Syntax.LogicalExpression:
+                return visit(expr.left) || visit(expr.right);
+
+            case Syntax.MemberExpression:
+                return true;
+
+            case Syntax.NewExpression:
+                return true;
+
+            case Syntax.ObjectExpression:
+                for (i = 0, iz = expr.properties.length; i < iz; ++i) {
+                    if (visit(expr.properties[i])) {
+                        return true;
+                    }
+                }
+                return false;
+
+            case Syntax.Property:
+                return visit(expr.value);
+
+            case Syntax.SequenceExpression:
+                for (i = 0, iz = expr.expressions.length; i < iz; ++i) {
+                    if (visit(expr.expressions[i])) {
+                        return true;
+                    }
+                }
+                return false;
+
+            case Syntax.ThisExpression:
+                return false;
+
+            case Syntax.UnaryExpression:
+                if (expr.operator === 'void' || expr.operator === 'delete' || expr.operator === 'typeof' || expr.operator === '!') {
+                    return visit(expr.argument);
+                }
+                return !isConstant(expr);
+
+            case Syntax.UpdateExpression:
+                return true;
+            }
+            return true;
+        }
+
+        return visit(expr);
+    }
+
+    exports.hasSideEffect = hasSideEffect;
+
+    // boolean decision
+    // @return {boolean|null} when indeterminate value comes, returns null
+    function booleanCondition(expr) {
+        var ret;
+        switch (expr.type) {
+        case Syntax.AssignmentExpression:
+            return booleanCondition(expr.right);
+
+        case Syntax.ArrayExpression:
+            return true;
+
+        case Syntax.BinaryExpression:
+            if (isConstant(expr)) {
+                return !!getConstant(expr);
+            }
+            return null;
+
+        case Syntax.CallExpression:
+            return null;
+
+        case Syntax.ConditionalExpression:
+            ret = booleanCondition(expr.test);
+            if (ret === true) {
+                return booleanCondition(expr.consequent);
+            }
+            if (ret === false) {
+                return booleanCondition(expr.alternate);
+            }
+            ret = booleanCondition(expr.consequent);
+            if (ret === booleanCondition(expr.alternate)) {
+                return ret;
+            }
+            return null;
+
+        case Syntax.FunctionExpression:
+            return true;
+
+        case Syntax.Identifier:
+            return null;
+
+        case Syntax.Literal:
+            return !!getConstant(expr);
+
+        case Syntax.LogicalExpression:
+            if (expr.operator === '&&') {
+                ret = booleanCondition(expr.left);
+                if (ret === null) {
+                    return null;
+                }
+                if (!ret) {
+                    return false;
+                }
+                return booleanCondition(expr.right);
+            } else {
+                ret = booleanCondition(expr.left);
+                if (ret === null) {
+                    return null;
+                }
+                if (ret) {
+                    return true;
+                }
+                return booleanCondition(expr.right);
+            }
+            return null;
+
+        case Syntax.MemberExpression:
+            return null;
+
+        case Syntax.NewExpression:
+            // always return object
+            return true;
+
+        case Syntax.ObjectExpression:
+            return true;
+
+        case Syntax.Property:
+            common.unreachable();
+            return null;
+
+        case Syntax.SequenceExpression:
+            return booleanCondition(common.Array.last(expr.expressions));
+
+        case Syntax.ThisExpression:
+            // in strict mode, this may be null / undefined
+            return null;
+
+        case Syntax.UnaryExpression:
+            if (expr.operator === 'void') {
+                return false;
+            }
+            if (expr.operator === 'typeof') {
+                return true;
+            }
+            if (expr.operator === '!') {
+                ret = booleanCondition(expr.argument);
+                if (ret === null) {
+                    return null;
+                }
+                return !ret;
+            }
+            if (isConstant(expr)) {
+                return !!getConstant(expr);
+            }
+            return null;
+
+        case Syntax.UpdateExpression:
+            return null;
+        }
+
+        return null;
+    }
+
+    exports.booleanCondition = booleanCondition;
+}());
 
 });
 
@@ -2421,7 +3091,7 @@ require.define("/lib/pass/hoist-variable-to-arguments.js",function(require,modul
 (function () {
     'use strict';
 
-    var Syntax, common, escope, scope, modified;
+    var Syntax, common, escope, modified;
 
     escope = require('escope');
     common = require('../common');
@@ -2810,7 +3480,7 @@ require.define("/lib/pass/transform-immediate-function-call.js",function(require
     Syntax = common.Syntax;
 
     function isEmptyFunctionCall(call) {
-        var callee;
+        var callee, i, iz, stmt;
         if (call.type !== Syntax.CallExpression) {
             return false;
         }
@@ -2825,7 +3495,19 @@ require.define("/lib/pass/transform-immediate-function-call.js",function(require
             return false;
         }
 
-        return callee.body.body.length === 0;
+        // see side effect
+        if (callee.body.body.length === 0) {
+            return true;
+        }
+
+        for (i = 0, iz = callee.body.body.length; i < iz; ++i) {
+            stmt = callee.body.body[i];
+            if (stmt.type !== Syntax.FunctionDeclaration) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     function callToSequence(call) {
@@ -2870,6 +3552,83 @@ require.define("/lib/pass/transform-immediate-function-call.js",function(require
 
     transformImmediateFunctionCall.passName = 'transform-immediate-function-call';
     module.exports = transformImmediateFunctionCall;
+}());
+/* vim: set sw=4 ts=4 et tw=80 : */
+
+});
+
+require.define("/lib/pass/transform-logical-association.js",function(require,module,exports,__dirname,__filename,process,global){/*
+  Copyright (C) 2012 Yusuke Suzuki <utatane.tea@gmail.com>
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+/*jslint bitwise:true */
+/*global esmangle:true, module:true, define:true, require:true*/
+(function () {
+    'use strict';
+
+    var Syntax, common, modified;
+
+    common = require('../common');
+    Syntax = common.Syntax;
+
+    function transformLogicalAssociation(tree, options) {
+        var result;
+
+        if (options == null) {
+            options = { destructive: false };
+        }
+
+        result = (options.destructive) ? tree : common.deepCopy(tree);
+        modified = false;
+
+        common.traverse(result, {
+            enter: function enter(node) {
+                if (node.type === Syntax.LogicalExpression) {
+                    // transform
+                    // a && (b && c) => (a && b) && c
+                    // a || (b || c) => (a || b) || c
+                    if (node.right.type === Syntax.LogicalExpression && node.operator === node.right.operator) {
+                        modified = true;
+                        node.left = {
+                            type: Syntax.LogicalExpression,
+                            operator: node.operator,
+                            left: node.left,
+                            right: node.right.left
+                        };
+                        node.right = node.right.right;
+                    }
+                }
+            }
+        });
+
+        return {
+            result: result,
+            modified: modified
+        };
+    }
+
+    transformLogicalAssociation.passName = 'transform-logical-association';
+    module.exports = transformLogicalAssociation;
 }());
 /* vim: set sw=4 ts=4 et tw=80 : */
 
@@ -3249,6 +4008,33 @@ require.define("/lib/pass/remove-wasted-blocks.js",function(require,module,expor
     common = require('../common');
     Syntax = common.Syntax;
 
+    function flattenBlockStatement(body) {
+        var i, iz, j, jz, result, stmt, inner, ok;
+        result = [];
+        for (i = 0, iz = body.length; i < iz; ++i) {
+            stmt = body[i];
+            if (stmt.type === Syntax.BlockStatement) {
+                ok = true;
+                for (j = 0, jz = stmt.body.length; j < jz; ++j) {
+                    inner = stmt.body[j];
+                    if (common.isScopedDeclaration(inner)) {
+                        // we cannot remove this block
+                        ok = false;
+                    }
+                }
+                if (ok) {
+                    modified = true;
+                    result = result.concat(stmt.body);
+                } else {
+                    result.push(stmt);
+                }
+            } else {
+                result.push(stmt);
+            }
+        }
+        return result;
+    }
+
     function removeWastedBlocks(tree, options) {
         var result;
 
@@ -3261,12 +4047,24 @@ require.define("/lib/pass/remove-wasted-blocks.js",function(require,module,expor
 
         result = common.replace(result, {
             leave: function leave(node, parent) {
+                var i, iz, len, array, stmt;
+                // remove nested blocks
+                if (node.type === Syntax.BlockStatement || node.type === Syntax.Program) {
+                    for (i = 0, iz = node.body.length; i < iz; ++i) {
+                        stmt = node.body[i];
+                        if (stmt.type === Syntax.BlockStatement) {
+                            node.body = flattenBlockStatement(node.body);
+                            break;
+                        }
+                    }
+                }
+
                 // These type needs BlockStatement
                 if (parent.type === Syntax.FunctionDeclaration || parent.type === Syntax.FunctionExpression || parent.type === Syntax.TryStatement || parent.type === Syntax.CatchClause) {
                     return;
                 }
 
-                while (node.type === Syntax.BlockStatement && node.body.length === 1) {
+                while (node.type === Syntax.BlockStatement && node.body.length === 1 && !common.isScopedDeclaration(node.body[0])) {
                     modified = true;
                     node = node.body[0];
                 }
@@ -3520,6 +4318,17 @@ require.define("/lib/pass/transform-to-sequence-expression.js",function(require,
                             expressions: expressions
                         };
                     }
+                    expressions = [];
+                }
+                body.push(stmt);
+            } else if (stmt.type === Syntax.IfStatement) {
+                if (expressions.length) {
+                    modified = true;
+                    expressions.push(stmt.test);
+                    stmt.test = {
+                        type: Syntax.SequenceExpression,
+                        expressions: expressions
+                    };
                     expressions = [];
                 }
                 body.push(stmt);
@@ -3859,10 +4668,11 @@ require.define("/lib/pass/reduce-sequence-expression.js",function(require,module
 (function () {
     'use strict';
 
-    var Syntax, common, escope, modified;
+    var Syntax, common, evaluator, escope, modified;
 
     escope = require('escope');
     common = require('../common');
+    evaluator = require('../evaluator');
     Syntax = common.Syntax;
 
     function reduce(node) {
@@ -3886,9 +4696,12 @@ require.define("/lib/pass/reduce-sequence-expression.js",function(require,module
     }
 
     function isLoadSideEffectFree(node, scope) {
-        var ref;
-        if (node.type === Syntax.Literal) {
-            return true;
+        var ref, value;
+        if (evaluator.constant.isConstant(node)) {
+            value = evaluator.constant.evaluate(node);
+            if (value === null || typeof value !== 'object') {
+                return true;
+            }
         }
         if (node.type === Syntax.Identifier) {
             ref = scope.resolve(node);
@@ -3898,14 +4711,15 @@ require.define("/lib/pass/reduce-sequence-expression.js",function(require,module
     }
 
     function isStoreSideEffectFree(node, scope) {
-        if (node.type === Syntax.Literal) {
+        if (!evaluator.hasSideEffect(node, scope)) {
             return true;
         }
         if (node.type === Syntax.Identifier) {
             return true;
         }
         if (node.type === Syntax.MemberExpression) {
-            if (isLoadSideEffectFree(node.object, scope)) {
+            if (!evaluator.hasSideEffect(node.object, scope)) {
+                // Because of toString operation
                 if (!node.computed || isLoadSideEffectFree(node.property, scope)) {
                     return true;
                 }
@@ -3940,13 +4754,31 @@ require.define("/lib/pass/reduce-sequence-expression.js",function(require,module
                     reduce(node);
                     break;
 
+                case Syntax.ConditionalExpression:
+                    if (node.test.type === Syntax.SequenceExpression) {
+                        modified = true;
+                        result = node.test;
+                        node.test = common.Array.last(result.expressions);
+                        result.expressions[result.expressions.length - 1] = node;
+                    }
+                    break;
+
+                case Syntax.LogicalExpression:
+                    if (node.left.type === Syntax.SequenceExpression) {
+                        modified = true;
+                        result = node.left;
+                        node.left = common.Array.last(result.expressions);
+                        result.expressions[result.expressions.length - 1] = node;
+                    }
+                    break;
+
                 case Syntax.BinaryExpression:
                     if (node.left.type === Syntax.SequenceExpression) {
                         modified = true;
                         result = node.left;
                         node.left = common.Array.last(result.expressions);
                         result.expressions[result.expressions.length - 1] = node;
-                    } else if (node.right.type === Syntax.SequenceExpression && isLoadSideEffectFree(node.left, scope)) {
+                    } else if (node.right.type === Syntax.SequenceExpression && !evaluator.hasSideEffect(node.left, scope)) {
                         modified = true;
                         result = node.right;
                         node.right = common.Array.last(result.expressions);
@@ -4861,10 +5693,11 @@ require.define("/lib/pass/remove-side-effect-free-expressions.js",function(requi
 (function () {
     'use strict';
 
-    var Syntax, Check, common, escope, modified;
+    var Syntax, Check, common, escope, evaluator, modified;
 
     escope = require('escope');
     common = require('../common');
+    evaluator = require('../evaluator');
     Syntax = common.Syntax;
 
     function reduce(node, scope, parent, isResultNeeded) {
@@ -4877,18 +5710,7 @@ require.define("/lib/pass/remove-side-effect-free-expressions.js",function(requi
             prev = expr;
             expr = node.expressions[i];
             if (((i + 1) !== iz) || !isResultNeeded) {
-                if (expr.type === Syntax.Literal) {
-                    continue;
-                }
-
-                if (expr.type === Syntax.Identifier) {
-                    ref = scope.resolve(expr);
-                    if (ref && ref.isStatic()) {
-                        continue;
-                    }
-                }
-
-                if (common.SpecialNode.isUndefined(expr) || common.SpecialNode.isNaN(expr) || common.SpecialNode.isNegative(expr)) {
+                if (!evaluator.hasSideEffect(expr, scope)) {
                     continue;
                 }
             }
@@ -4955,33 +5777,11 @@ require.define("/lib/pass/remove-side-effect-free-expressions.js",function(requi
                 // Because eval code should return last evaluated value in
                 // ExpressionStatement, we should not remove.
                 if (!isResultNeeded(res, scope)) {
-                    expr = res.expression;
-                    switch (expr.type) {
-                    case Syntax.Literal:
+                    if (!evaluator.hasSideEffect(res.expression, scope)) {
                         modified = true;
                         res = common.moveLocation(res, {
                             type: Syntax.EmptyStatement
                         });
-                        break;
-
-                    case Syntax.Identifier:
-                        ref = scope.resolve(expr);
-                        if (ref && ref.isStatic()) {
-                            modified = true;
-                            res = common.moveLocation(res, {
-                                type: Syntax.EmptyStatement
-                            });
-                        }
-                        break;
-
-                    default:
-                        if (common.SpecialNode.isUndefined(expr) || common.SpecialNode.isNaN(expr) || common.SpecialNode.isNegative(expr)) {
-                            modified = true;
-                            res = common.moveLocation(res, {
-                                type: Syntax.EmptyStatement
-                            });
-                        }
-                        break;
                     }
                 }
                 return res;
@@ -5321,7 +6121,7 @@ require.define("/lib/pass/remove-context-sensitive-expressions.js",function(requ
 
 });
 
-require.define("/lib/pass/tree-based-constant-folding.js",function(require,module,exports,__dirname,__filename,process,global){/*
+require.define("/lib/pass/drop-variable-definition.js",function(require,module,exports,__dirname,__filename,process,global){/*
   Copyright (C) 2012 Yusuke Suzuki <utatane.tea@gmail.com>
 
   Redistribution and use in source and binary forms, with or without
@@ -5350,256 +6150,284 @@ require.define("/lib/pass/tree-based-constant-folding.js",function(require,modul
 (function () {
     'use strict';
 
-    var Syntax, common, modified;
+    var Syntax, common, modified, escope, evaluator;
 
     common = require('../common');
+    escope = require('escope');
+    evaluator = require('../evaluator');
     Syntax = common.Syntax;
 
-    function isConstant(node, allowRegExp) {
-        if (node.type === Syntax.Literal) {
-            if (typeof node.value === 'object' && node.value !== null) {
-                // This is RegExp
-                return allowRegExp;
+    function getCandidates(scope) {
+        var i, iz, j, jz, identifiers, slots, v;
+
+        if (!scope.candidates) {
+            slots = [];
+            identifiers = [];
+            for (i = 0, iz = scope.variables.length; i < iz; ++i) {
+                v = scope.variables[i];
+                for (j = 0, jz = v.identifiers.length; j < jz; ++j) {
+                    identifiers.push(v.identifiers[j]);
+                    slots.push(v);
+                }
             }
+
+            scope.candidates = {
+                slots: slots,
+                identifiers: identifiers
+            };
+        }
+
+        return scope.candidates;
+    }
+
+    function isRemovableDefinition(slot, scope) {
+        var i, iz, ref;
+        if (slot.identifiers.length !== 1) {
+            return false;
+        }
+
+        if (slot.references.length === 0) {
             return true;
         }
-        if (node.type === Syntax.UnaryExpression) {
-            if (node.operator === 'void' || node.operator === 'delete' || node.operator === '!' || node.operator === 'typeof') {
-                return isConstant(node.argument, true);
-            }
-            return isConstant(node.argument, false);
-        }
-        if (node.type === Syntax.BinaryExpression) {
-            if (node.operator === 'in' || node.operator === 'instanceof') {
+
+        for (i = 0, iz = slot.references.length; i < iz; ++i) {
+            ref = slot.references[i];
+            if (ref.isRead()) {
                 return false;
             }
-            return isConstant(node.left, false) && isConstant(node.right, false);
-        }
-        if (node.type === Syntax.LogicalExpression) {
-            return isConstant(node.left, true) && isConstant(node.right, true);
-        }
-        return false;
-    }
-
-    function isModifiedConstant(node) {
-        // consider
-        //   (undefined) `void 0`
-        //   (negative value) `-1`,
-        //   (NaN) `0/0`
-        if (common.SpecialNode.isUndefined(node)) {
-            return false;
-        }
-        if (common.SpecialNode.isNegative(node)) {
-            return false;
-        }
-        if (common.SpecialNode.isNaN(node)) {
-            return false;
-        }
-        return isConstant(node, false);
-    }
-
-    function getConstant(node) {
-        if (node.type === Syntax.Literal) {
-            return node.value;
-        }
-        if (node.type === Syntax.UnaryExpression) {
-            return doUnary(node.operator, getConstant(node.argument));
-        }
-        if (node.type === Syntax.BinaryExpression) {
-            return doBinary(node.operator, getConstant(node.left), getConstant(node.right));
-        }
-        if (node.type === Syntax.LogicalExpression) {
-            return doLogical(node.operator, getConstant(node.left), getConstant(node.right));
-        }
-        common.unreachable();
-    }
-
-    function doLogical(operator, left, right) {
-        if (operator === '||') {
-            return left || right;
-        }
-        return left && right;
-    }
-
-    function doUnary(operator, argument) {
-        switch (operator) {
-        case '+':
-            return +argument;
-        case '-':
-            return -argument;
-        case '~':
-            return ~argument;
-        case '!':
-            return !argument;
-        case 'delete':
-            // do delete on constant value (not considering identifier in this tree based constant folding)
-            return true;
-        case 'void':
-            return undefined;
-        case 'typeof':
-            return typeof argument;
-        }
-    }
-
-    function doBinary(operator, left, right) {
-        switch (operator) {
-        case '|':
-            return left | right;
-        case '^':
-            return left ^ right;
-        case '&':
-            return left & right;
-        case '==':
-            return left == right;
-        case '!=':
-            return left != right;
-        case '===':
-            return left === right;
-        case '!==':
-            return left !== right;
-        case '<':
-            return left < right;
-        case '>':
-            return left > right;
-        case '<=':
-            return left <= right;
-        case '>=':
-            return left >= right;
-        // case 'in':
-        //    return left in right;
-        // case 'instanceof':
-        //    return left instanceof right;
-        case '<<':
-            return left << right;
-        case '>>':
-            return left >> right;
-        case '>>>':
-            return left >>> right;
-        case '+':
-            return left + right;
-        case '-':
-            return left - right;
-        case '*':
-            return left * right;
-        case '/':
-            return left / right;
-        case '%':
-            return left % right;
-        }
-        common.unreachable();
-    }
-
-    function wrapNode(value) {
-        if (typeof value === 'number') {
-            if (isNaN(value)) {
-                return common.SpecialNode.generateNaN();
-            }
-            if (common.isNegative(value)) {
-                return common.SpecialNode.generateNegative(value);
+            if (ref.isWrite()) {
+                if (!ref.writeExpr) {
+                    return false;
+                }
+                if (evaluator.hasSideEffect(ref.writeExpr, ref.from)) {
+                    return false;
+                }
             }
         }
-        if (value === undefined) {
-            return common.SpecialNode.generateUndefined();
+
+        return true;
+    }
+
+    function dropVariableDefinition(tree, options) {
+        var result, manager, scope, candidates;
+
+        if (options == null) {
+            options = { destructive: false };
         }
+
+        result = options.destructive ? tree : common.deepCopy(tree);
+        modified = false;
+        scope = null;
+        manager = escope.analyze(result);
+        manager.attach();
+
+        result = common.replace(result, {
+            enter: function enter(node, parent) {
+                var i, iz, decl, ref, cand, index, slot, ret;
+                ret = node;
+                if (scope) {
+                    if (scope.variableScope.isStatic()) {
+                        cand = getCandidates(scope.variableScope);
+
+                        // remove unused variable
+                        if (node.type === Syntax.VariableDeclaration && node.kind === 'var') {
+                            i = node.declarations.length;
+                            while (i--) {
+                                decl = node.declarations[i];
+                                index = cand.identifiers.indexOf(decl.id);
+                                common.assert(index !== -1);
+                                slot = cand.slots[index];
+                                if (isRemovableDefinition(slot, scope)) {
+                                    // ok, remove this variable
+                                    modified = true;
+                                    node.declarations.splice(i, 1);
+                                    continue;
+                                }
+                            }
+                            if (node.declarations.length === 0) {
+                                if (parent.type === Syntax.ForStatement) {
+                                    ret = null;
+                                } else {
+                                    ret = common.moveLocation(node, {
+                                        type: Syntax.EmptyStatement
+                                    });
+                                }
+                            }
+                        }
+
+                        // remove unused function declaration
+                        if (node.type === Syntax.FunctionDeclaration) {
+                            index = cand.identifiers.indexOf(node.id);
+                            common.assert(index !== -1);
+                            slot = cand.slots[index];
+                            if (slot.identifiers.length === 1 && slot.references.length === 0) {
+                                // ok, remove this function declaration
+                                modified = true;
+                                ret = common.moveLocation(node, {
+                                    type: Syntax.EmptyStatement
+                                });
+                                return ret;
+                            }
+                        }
+                    }
+                }
+
+                scope = manager.acquire(node) || scope;
+                return ret;
+            },
+            leave: function leave(node) {
+                scope = manager.release(node) || scope;
+            }
+        });
+
+        manager.detach();
+
         return {
-            type: Syntax.Literal,
-            value: value
+            result: result,
+            modified: modified
         };
     }
 
-    function isFoldableConditional(node) {
-        if (node.type !== Syntax.ConditionalExpression) {
-            return false;
+    dropVariableDefinition.passName = 'drop-variable-definition';
+    module.exports = dropVariableDefinition;
+}());
+/* vim: set sw=4 ts=4 et tw=80 : */
+
+});
+
+require.define("/lib/pass/remove-unreachable-branch.js",function(require,module,exports,__dirname,__filename,process,global){/*
+  Copyright (C) 2012 Yusuke Suzuki <utatane.tea@gmail.com>
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+/*jslint bitwise:true */
+/*global esmangle:true, module:true, define:true, require:true*/
+(function () {
+    'use strict';
+
+    var Syntax, common, escope, evaluator, modified;
+
+    escope = require('escope');
+    common = require('../common');
+    evaluator = require('../evaluator');
+    Syntax = common.Syntax;
+
+    function handleIfStatement(func, node) {
+        var test, body, decl;
+        test = evaluator.booleanCondition(node.test);
+        if (!node.alternate) {
+            if (typeof test === 'boolean') {
+                modified = true;
+                body = [];
+
+                if (test) {
+                    body.push(common.moveLocation(node.test, {
+                        type: Syntax.ExpressionStatement,
+                        expression: node.test
+                    }), node.consequent);
+                    return {
+                        type: Syntax.BlockStatement,
+                        body: body
+                    };
+                } else {
+                    decl = common.delegateVariableDeclarations(node.consequent, func);
+                    if (decl) {
+                        body.push(decl);
+                    }
+                    body.push(common.moveLocation(node.test, {
+                        type: Syntax.ExpressionStatement,
+                        expression: node.test
+                    }));
+                    return {
+                        type: Syntax.BlockStatement,
+                        body: body
+                    };
+                }
+            }
+        } else {
+            if (typeof test === 'boolean') {
+                modified = true;
+                body = [];
+
+                if (test) {
+                    decl = common.delegateVariableDeclarations(node.alternate, func);
+                    if (decl) {
+                        body.push(decl);
+                    }
+                    body.push(common.moveLocation(node.test, {
+                        type: Syntax.ExpressionStatement,
+                        expression: node.test
+                    }), node.consequent);
+                    return {
+                        type: Syntax.BlockStatement,
+                        body: body
+                    };
+                } else {
+                    decl = common.delegateVariableDeclarations(node.consequent, func);
+                    if (decl) {
+                        body.push(decl);
+                    }
+                    body.push(common.moveLocation(node.test, {
+                        type: Syntax.ExpressionStatement,
+                        expression: node.test
+                    }), node.alternate);
+                    return {
+                        type: Syntax.BlockStatement,
+                        body: body
+                    };
+                }
+            }
         }
-        return isConstant(node.consequent) || isConstant(node.alternate);
     }
 
-    function foldConditional(node) {
-        var binary, unary, operator, left, right;
-        switch (node.type) {
-        case Syntax.BinaryExpression:
-            if (node.operator === 'in' || node.operator === 'instanceof') {
-                // cannot fold this
-                return node;
-            }
-
-            if (isConstant(node.left) && isFoldableConditional(node.right)) {
-                modified = true;
-                binary = node;
-                operator = binary.operator;
-                left = getConstant(binary.left);
-
-                node = node.right;
-                if (isConstant(node.consequent)) {
-                    node.consequent = wrapNode(doBinary(operator, left, getConstant(node.consequent)));
+    function handleLogicalExpression(func, node) {
+        var test;
+        test = evaluator.booleanCondition(node.left);
+        if (typeof test === 'boolean') {
+            modified = true;
+            if (test) {
+                if (node.operator === '&&') {
+                    return common.moveLocation(node, {
+                        type: Syntax.SequenceExpression,
+                        expressions: [ node.left, node.right ]
+                    });
                 } else {
-                    // cannot fold left
-                    binary.right = node.consequent;
-                    node.consequent = binary;
+                    return node.left;
                 }
-                if (isConstant(node.alternate)) {
-                    node.alternate = wrapNode(doBinary(operator, left, getConstant(node.alternate)));
+            } else {
+                if (node.operator === '&&') {
+                    return node.left;
                 } else {
-                    // cannot fold right
-                    binary.right = node.alternate;
-                    node.alternate = binary;
-                }
-            } else if (isConstant(node.right) && isFoldableConditional(node.left)) {
-                modified = true;
-                binary = node;
-                operator = binary.operator;
-                right = getConstant(binary.right);
-
-                node = node.left;
-                if (isConstant(node.consequent)) {
-                    node.consequent = wrapNode(doBinary(operator, getConstant(node.consequent), right));
-                } else {
-                    // cannot fold left
-                    binary.left = node.consequent;
-                    node.consequent = binary;
-                }
-                if (isConstant(node.alternate)) {
-                    node.alternate = wrapNode(doBinary(operator, getConstant(node.alternate), right));
-                } else {
-                    // cannot fold right
-                    binary.left = node.alternate;
-                    node.alternate = binary;
+                    return common.moveLocation(node, {
+                        type: Syntax.SequenceExpression,
+                        expressions: [ node.left, node.right ]
+                    });
                 }
             }
-            break;
-
-        case Syntax.LogicalExpression:
-            break;
-
-        case Syntax.UnaryExpression:
-            if (isFoldableConditional(node.argument)) {
-                modified = true;
-                unary = node;
-                operator = unary.operator;
-                node = unary.argument;
-                if (isConstant(node.consequent)) {
-                    node.consequent = wrapNode(doUnary(operator, getConstant(node.consequent)));
-                } else {
-                    // cannot fold left
-                    unary.argument = node.consequent;
-                    node.consequent = unary;
-                }
-                if (isConstant(node.alternate)) {
-                    node.alternate = wrapNode(doUnary(operator, getConstant(node.alternate)));
-                } else {
-                    // cannot fold right
-                    unary.argument = node.alternate;
-                    node.alternate = unary;
-                }
-            }
-            break;
         }
-
-        return node;
     }
 
-    function treeBasedConstantFolding(tree, options) {
-        var result;
+    function removeUnreachableBranch(tree, options) {
+        var result, stack;
 
         if (options == null) {
             options = { destructive: false };
@@ -5607,36 +6435,29 @@ require.define("/lib/pass/tree-based-constant-folding.js",function(require,modul
 
         result = (options.destructive) ? tree : common.deepCopy(tree);
         modified = false;
+        stack = [];
 
         result = common.replace(result, {
-            leave: function leave(node, parent) {
-                var con, alt;
-                switch (node.type) {
-                case Syntax.BinaryExpression:
-                case Syntax.LogicalExpression:
-                case Syntax.UnaryExpression:
-                    if (isModifiedConstant(node)) {
-                        modified = true;
-                        return common.moveLocation(node, wrapNode(getConstant(node)));
-                    }
-                    return foldConditional(node);
+            enter: function enter(node) {
+                var func;
 
-                case Syntax.ConditionalExpression:
-                    if (isConstant(node.consequent) && isConstant(node.alternate)) {
-                        con = getConstant(node.consequent);
-                        alt = getConstant(node.alternate);
-                        if (common.sameValue(con, alt)) {
-                            modified = true;
-                            return common.moveLocation(node, {
-                                type: Syntax.SequenceExpression,
-                                expressions: [
-                                    node.test,
-                                    wrapNode(con)
-                                ]
-                            });
-                        }
-                    }
-                    break;
+                if (escope.Scope.isVariableScopeRequired(node)) {
+                    stack.push(node);
+                    return;
+                }
+                func = common.Array.last(stack);
+
+                switch (node.type) {
+                case Syntax.IfStatement:
+                    return handleIfStatement(func, node);
+
+                case Syntax.LogicalExpression:
+                    return handleLogicalExpression(func, node);
+                }
+            },
+            leave: function leave(node) {
+                if (escope.Scope.isVariableScopeRequired(node)) {
+                    stack.pop();
                 }
             }
         });
@@ -5644,11 +6465,11 @@ require.define("/lib/pass/tree-based-constant-folding.js",function(require,modul
         return {
             result: result,
             modified: modified
-        }
+        };
     }
 
-    treeBasedConstantFolding.passName = 'tree-based-constant-folding';
-    module.exports = treeBasedConstantFolding;
+    removeUnreachableBranch.passName = 'remove-unreachable-branch';
+    module.exports = removeUnreachableBranch;
 }());
 /* vim: set sw=4 ts=4 et tw=80 : */
 
@@ -6005,10 +6826,12 @@ require.define("/lib/post/rewrite-conditional-expression.js",function(require,mo
 require.define("/tools/entry.js",function(require,module,exports,__dirname,__filename,process,global){global.esmangle = require('../lib/esmangle');
 (function () {
     // entry points
+    require('../lib/pass/tree-based-constant-folding');
     require('../lib/pass/hoist-variable-to-arguments');
     require('../lib/pass/transform-dynamic-to-static-property-access');
     require('../lib/pass/transform-dynamic-to-static-property-definition');
     require('../lib/pass/transform-immediate-function-call');
+    require('../lib/pass/transform-logical-association');
     require('../lib/pass/reordering-function-declarations');
     require('../lib/pass/remove-unused-label');
     require('../lib/pass/remove-empty-statement');
@@ -6023,7 +6846,9 @@ require.define("/tools/entry.js",function(require,module,exports,__dirname,__fil
     require('../lib/pass/dead-code-elimination');
     require('../lib/pass/remove-side-effect-free-expressions');
     require('../lib/pass/remove-context-sensitive-expressions');
-    require('../lib/pass/tree-based-constant-folding');
+    require('../lib/pass/drop-variable-definition');
+    require('../lib/pass/remove-unreachable-branch');
+
     require('../lib/post/transform-static-to-dynamic-property-access');
     require('../lib/post/transform-infinity');
     require('../lib/post/rewrite-boolean');
