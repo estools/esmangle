@@ -1073,7 +1073,7 @@ require.define("/node_modules/escope/escope.js",function(require,module,exports,
         return this.thisFound;
     };
 
-    Scope.name = '__$escope$__';
+    Scope.mangledName = '__$escope$__';
 
     Scope.prototype.attach = function attach() {
         if (!this.functionExpressionScope) {
@@ -1399,7 +1399,7 @@ require.define("/node_modules/escope/escope.js",function(require,module,exports,
         return new ScopeManager(scopes);
     }
 
-    exports.version = '0.0.8';
+    exports.version = '0.0.9';
     exports.Reference = Reference;
     exports.Variable = Variable;
     exports.Scope = Scope;
