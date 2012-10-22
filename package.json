@@ -23,7 +23,7 @@
         "url": "http://github.com/Constellation/esmangle.git"
     },
     "dependencies": {
-        "esprima": ">= 0.9.9",
+        "esprima": ">= 1.0.0",
         "escope": ">= 0.0.8",
         "escodegen": ">= 0.0.12",
         "estraverse": ">= 0.0.3",
