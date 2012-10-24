@@ -33,8 +33,13 @@
         root = path.join(path.dirname(fs.realpathSync(__filename)), '..'),
         names = process.argv.splice(2),
         name,
+        current,
+        num,
+        exists,
         test,
         expected;
+
+    exists = fs.existsSync || path.existsSync;
 
     if (names.length === 0) {
         console.log('Usage:');
@@ -43,8 +48,16 @@
     }
 
     name = names[0];
-    test = path.join(root, 'test', 'compare', name + '.js');
-    expected = path.join(root, 'test', 'compare', name + '.expected.js');
+    current = name;
+    num = 1;
+    do {
+        test = path.join(root, 'test', 'compare', current + '.js');
+        expected = path.join(root, 'test', 'compare', current + '.expected.js');
+        if (!exists(test) && !exists(expected)) {
+            break;
+        }
+        current = name + '-' + (++num);
+    } while (true);
 
     fs.writeFileSync(test, '', 'utf-8');
     fs.writeFileSync(expected, '', 'utf-8');
