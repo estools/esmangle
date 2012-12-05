@@ -70,6 +70,50 @@ defaultPost = [
     esmangle.require('post/rewrite-conditional-expression')
 ];
 
+function doOptimize(tree, pass, post) {
+    tree = esmangle.optimize(tree, [ pass, { once: true, pass: post } ], {
+        directive: true
+    });
+    return esmangle.mangle(tree, {
+        destructive: true
+    });
+}
+
+function doTest(tree, expected) {
+    var pass, post, actual;
+    pass = defaultPass;
+    post = defaultPost;
+    tree.comments.some(function (comment) {
+        var parsed;
+        try {
+            parsed = JSON.parse(comment.value.trim());
+            if (typeof parsed === 'object' && parsed !== null) {
+                pass = parsed.pass ? parsed.pass.map(function (name) {
+                    return esmangle.require('pass/' + name);
+                }) : [];
+                post = parsed.post ? parsed.post.map(function (name) {
+                    return esmangle.require('post/' + name);
+                }) : [];
+                return true;
+            }
+        } catch (e) { }
+        return false;
+    });
+    tree = doOptimize(tree, pass, post);
+    actual = escodegen.generate(tree, {
+        format: {
+            renumber: true,
+            hexadecimal: true,
+            escapeless: true,
+            compact: true,
+            semicolons: false,
+            parentheses: false
+        },
+        directive: true
+    });
+    expect(actual).to.be.equal(expected);
+}
+
 describe('compare mangling result', function () {
     fs.readdirSync(__dirname + '/compare').sort().forEach(function(file) {
         var p;
@@ -77,7 +121,7 @@ describe('compare mangling result', function () {
             if (!/expected\.js$/.test(file)) {
                 p = file.replace(/\.js$/, '.expected.js');
                 it(file, function () {
-                    var codeName, code, expectedName, expected, tree, actual, pass, post;
+                    var codeName, code, expectedName, tree, expected;
 
                     codeName = __dirname + '/compare/' + file;
                     expectedName = __dirname + '/compare/' + p;
@@ -88,44 +132,11 @@ describe('compare mangling result', function () {
                     code = fs.readFileSync(codeName, 'utf-8');
                     expected = fs.readFileSync(expectedName, 'utf-8').trim();
                     tree = esprima.parse(code, { comment: true });
-
-                    pass = defaultPass;
-                    post = defaultPost;
-                    tree.comments.some(function (comment) {
-                        var parsed;
-                        try {
-                            parsed = JSON.parse(comment.value.trim());
-                            if (typeof parsed === 'object' && parsed !== null) {
-                                pass = parsed.pass ? parsed.pass.map(function (name) {
-                                    return esmangle.require('pass/' + name);
-                                }) : [];
-                                post = parsed.post ? parsed.post.map(function (name) {
-                                    return esmangle.require('post/' + name);
-                                }) : [];
-                                return true;
-                            }
-                        } catch (e) { }
-                        return false;
-                    });
-
-                    tree = esmangle.optimize(tree, [ pass, { once: true, pass: post } ], {
-                        directive: true
-                    });
-                    tree = esmangle.mangle(tree, {
-                        destructive: true
-                    });
-                    actual = escodegen.generate(tree, {
-                        format: {
-                            renumber: true,
-                            hexadecimal: true,
-                            escapeless: true,
-                            compact: true,
-                            semicolons: false,
-                            parentheses: false
-                        },
-                        directive: true
-                    });
-                    expect(actual).to.be.equal(expected);
+                    // normal test
+                    doTest(tree, expected);
+                    // raw test
+                    tree = esprima.parse(code, { comment: true, raw: true });
+                    doTest(tree, expected);
                 });
             }
         }
