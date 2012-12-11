@@ -44,7 +44,7 @@ argv = optimist.usage("Usage: $0 file")
     .string('o')
     .alias('o', 'output')
     .describe('o', 'output file')
-    .demand(1).argv;
+    .argv;
 
 if (argv.output && Array.isArray(argv.output) && argv.output.length > 1) {
     optimist.showHelp();
@@ -52,9 +52,16 @@ if (argv.output && Array.isArray(argv.output) && argv.output.length > 1) {
     process.exit(1);
 }
 
-argv._.forEach(function (filename) {
-    var content, tree, result;
-    content = fs.readFileSync(filename, 'utf-8');
+function output(code) {
+    if (argv.output) {
+        fs.writeFileSync(argv.output, code);
+    } else {
+        console.log(code);
+    }
+}
+
+function compile(content, filename) {
+    var tree;
     tree = esprima.parse(content, { loc: true });
     tree = esmangle.optimize(tree, null, {
         destructive: true,
@@ -63,7 +70,7 @@ argv._.forEach(function (filename) {
     tree = esmangle.mangle(tree, {
         destructive: true
     });
-    result = escodegen.generate(tree, {
+    return escodegen.generate(tree, {
         format: {
             renumber: true,
             hexadecimal: true,
@@ -75,10 +82,26 @@ argv._.forEach(function (filename) {
         sourceMap: argv['source-map'] && filename,
         directive: true
     });
-    if (argv.output) {
-        fs.writeFile(argv.output, result);
-    } else {
-        console.log(result);
-    }
-});
+}
+
+if (argv._.length === 0) {
+    // no file is specified, so use stdin as input
+    (function () {
+        var code = '';
+        process.stdin.on('data', function (data) {
+            code += data;
+        });
+        process.stdin.on('end', function (err) {
+            output(compile(code, 'stdin'));
+        });
+        process.stdin.resume();
+    }());
+} else {
+    argv._.forEach(function (filename) {
+        var content, result;
+        content = fs.readFileSync(filename, 'utf-8');
+        result = compile(content, filename);
+        output(result);
+    });
+}
 /* vim: set sw=4 ts=4 et tw=80 : */
