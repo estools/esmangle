@@ -1,1 +1,1 @@
-(function(obj){obj={};with(obj)(0,test)()}())
+(function(a){a={};with(a)(0,test)()}())
