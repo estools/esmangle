@@ -40,6 +40,7 @@
         "url": "http://github.com/Constellation/esmangle/raw/master/LICENSE.BSD"
     }],
     "scripts": {
-        "test": "./node_modules/.bin/mocha"
+        "test": "./node_modules/.bin/mocha",
+        "build": "mkdir -p build && ./node_modules/.bin/browserify tools/entry.js > build/esmangle.js && bin/esmangle.js build/esmangle.js > build/esmangle.min.js"
     }
 }

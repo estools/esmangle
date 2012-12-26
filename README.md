@@ -13,6 +13,10 @@ Node.js application via the package manager:
 
     npm install esmangle
 
+If you would like to use latest esmangle in a browser, you can build `build/esmangle.min.js`:
+
+    npm run-script build
+
 
 ### Usage
 
