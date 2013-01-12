@@ -26,7 +26,7 @@
         "esprima": "~ 1.0.2",
         "escope": "~ 0.0.11",
         "escodegen": "~ 0.0.15",
-        "estraverse": "~ 0.0.3",
+        "estraverse": "~ 0.0.4",
         "source-map": "~ 0.1.8",
         "optimist": "*"
     },
