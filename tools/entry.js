@@ -21,6 +21,7 @@ global.esmangle = require('../lib/esmangle');
     require('../lib/pass/dead-code-elimination');
     require('../lib/pass/remove-side-effect-free-expressions');
     require('../lib/pass/remove-context-sensitive-expressions');
+    require('../lib/pass/concatenate-variable-definition');
     require('../lib/pass/drop-variable-definition');
     require('../lib/pass/remove-unreachable-branch');
 
