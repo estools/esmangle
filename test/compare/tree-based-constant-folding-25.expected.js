@@ -1,1 +1,1 @@
-('object RegExp')
+typeof/test/+' RegExp'

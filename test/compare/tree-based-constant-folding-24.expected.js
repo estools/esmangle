@@ -1,1 +1,1 @@
-('object')
+typeof/test/
