@@ -1,5 +1,7 @@
 (function (test) {
     switch (test) {
-    default:;
+    case 0:
+    default:
+        print("HELLO");
     }
 }());
