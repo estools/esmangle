@@ -45,7 +45,7 @@
                     fail: true
                 },
                 mocha: {
-                    cmd: 'node_modules/.bin/mocha -c',
+                    cmd: 'node_modules/.bin/mocha -c --reporter spec',
                     stdout: true,
                     stderr: true,
                     bg: false,
