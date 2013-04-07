@@ -1,1 +1,1 @@
-(function(){label:for(;;)for(;;)continue label}())
+(function(){a:for(;;)for(;;)continue a}())

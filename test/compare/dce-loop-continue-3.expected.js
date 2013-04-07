@@ -1,1 +1,1 @@
-label:for(;;)for(;;)continue label
+a:for(;;)for(;;)continue a

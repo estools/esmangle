@@ -1,1 +1,1 @@
-(function(){label:for(;;)for(;;)break label}())
+(function(){a:for(;;)for(;;)break a}())

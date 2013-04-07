@@ -1,1 +1,1 @@
-test:while(cond)break test;while(cond)break
+a:while(cond)break a;while(cond)break
