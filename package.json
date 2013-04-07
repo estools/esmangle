@@ -49,7 +49,7 @@
     }
   ],
   "scripts": {
-    "test": "node_modules/.bin/grunt travis",
+    "test": "node_modules/.bin/grunt travis --verbose",
     "build": "node_modules/.bin/grunt build"
   }
 }
