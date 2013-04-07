@@ -36,17 +36,16 @@
                     jshintrc: '.jshintrc'
                 }
             },
-            mochaTest: {
-                files: ['test/*.js']
-            },
-            mochaTestConfig: {
-                options: {
-                    reporter: 'dot'
-                }
-            },
             bgShell: {
                 browserify: {
                     cmd: 'node_modules/.bin/browserify tools/entry.js -o build/esmangle.js',
+                    stdout: true,
+                    stderr: true,
+                    bg: false,
+                    fail: true
+                },
+                mocha: {
+                    cmd: 'node_modules/.bin/mocha',
                     stdout: true,
                     stderr: true,
                     bg: false,
@@ -70,11 +69,10 @@
 
         // load tasks
         grunt.loadNpmTasks('grunt-contrib-jshint');
-        grunt.loadNpmTasks('grunt-mocha-test');
         grunt.loadNpmTasks('grunt-bg-shell');
 
         // alias
-        grunt.registerTask('test', 'mochaTest');
+        grunt.registerTask('test', 'bgShell:mocha');
         grunt.registerTask('lint', 'jshint');
         grunt.registerTask('build', ['browserify', 'bgShell:esmangle']);
         grunt.registerTask('travis', ['lint', 'test']);

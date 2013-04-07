@@ -34,11 +34,11 @@
   },
   "devDependencies": {
     "chai": "*",
+    "mocha": "~1.9.0",
     "browserify": "*",
     "grunt": "~0.4.1",
     "grunt-cli": "~0.1.7",
     "grunt-contrib-jshint": "~0.4.1",
-    "grunt-mocha-test": "~0.2.0",
     "grunt-bg-shell": "~2.0.1",
     "grunt-contrib-copy": "~0.4.1"
   },
