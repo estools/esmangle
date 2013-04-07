@@ -8,7 +8,7 @@
     },
     "version": "0.0.13-dev",
     "engines": {
-        "node": ">=0.4.0"
+        "node": ">=0.6.0"
     },
     "directories": {
         "lib": "./lib"
@@ -33,7 +33,9 @@
     "devDependencies": {
         "mocha": "*",
         "chai": "*",
-        "browserify": "*"
+        "browserify": "*",
+        "grunt": "0.4.1",
+        "grunt-contrib-jshint": "0.4.1"
     },
     "licenses": [{
         "type": "BSD",

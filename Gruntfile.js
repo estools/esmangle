@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2012 Michael Ficarra <esmangle.copyright@michael.ficarra.me>
+  Copyright (C) 2013 Yusuke Suzuki <utatane.tea@gmail.com>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
@@ -21,50 +21,25 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
   THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-
-/*jslint bitwise:true */
-/*global module:true, require:true*/
 (function () {
     'use strict';
 
-    var Syntax, common;
-
-    common = require('../common');
-    Syntax = common.Syntax;
-
-    function transformInfinity(tree, options) {
-        var result, modified;
-
-        if (options == null) {
-            options = { destructive: false };
-        }
-
-        result = options.destructive ? tree : common.deepCopy(tree);
-        modified = false;
-
-        result = common.replace(result, {
-            enter: function enter(node) {
-                if (node.type === Syntax.Literal && typeof node.value === 'number') {
-                    if (node.value === Infinity) {
-                        modified = true;
-                        return common.moveLocation(node, {
-                            type: Syntax.BinaryExpression,
-                            operator: '/',
-                            left: {type: Syntax.Literal, value: 1},
-                            right: {type: Syntax.Literal, value: 0}
-                        });
-                    }
+    module.exports = function (grunt) {
+        grunt.initConfig({
+            jshint: {
+                files: [
+                    'Gruntfile.js',
+                    'lib/**/*.js',
+                    '*.js'
+                ],
+                options: {
+                    jshintrc: '.jshintrc'
                 }
             }
         });
 
-        return {
-            result: result,
-            modified: modified
-        };
-    }
-
-    transformInfinity.passName = 'transform-infinity';
-    module.exports = transformInfinity;
+        grunt.loadNpmTasks('grunt-contrib-jshint');
+        grunt.registerTask('default', [ 'jshint' ]);
+    };
 }());
 /* vim: set sw=4 ts=4 et tw=80 : */
