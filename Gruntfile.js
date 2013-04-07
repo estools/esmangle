@@ -45,7 +45,7 @@
                     fail: true
                 },
                 mocha: {
-                    cmd: 'node_modules/.bin/mocha',
+                    cmd: 'node_modules/.bin/mocha -c',
                     stdout: true,
                     stderr: true,
                     bg: false,
