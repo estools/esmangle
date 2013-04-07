@@ -27,7 +27,7 @@
     module.exports = function (grunt) {
         grunt.initConfig({
             jshint: {
-                files: [
+                all: [
                     'Gruntfile.js',
                     'lib/**/*.js',
                     '*.js'
@@ -35,11 +35,50 @@
                 options: {
                     jshintrc: '.jshintrc'
                 }
+            },
+            mochaTest: {
+                files: ['test/*.js']
+            },
+            mochaTestConfig: {
+                options: {
+                    reporter: 'dot'
+                }
+            },
+            bgShell: {
+                browserify: {
+                    cmd: 'node_modules/.bin/browserify tools/entry.js -o build/esmangle.js',
+                    stdout: true,
+                    stderr: true,
+                    bg: false,
+                    fail: true
+                },
+                esmangle: {
+                    cmd: 'bin/esmangle.js build/esmangle.js -o build/esmangle.min.js',
+                    stdout: true,
+                    stderr: true,
+                    bg: false,
+                    fail: true
+                }
             }
         });
 
+        grunt.registerTask('directory:build', 'create build directory', function () {
+            grunt.file.mkdir('build');
+        });
+
+        grunt.registerTask('browserify', ['directory:build', 'bgShell:browserify']);
+
+        // load tasks
         grunt.loadNpmTasks('grunt-contrib-jshint');
-        grunt.registerTask('default', [ 'jshint' ]);
+        grunt.loadNpmTasks('grunt-mocha-test');
+        grunt.loadNpmTasks('grunt-bg-shell');
+
+        // alias
+        grunt.registerTask('test', 'mochaTest');
+        grunt.registerTask('lint', 'jshint');
+        grunt.registerTask('build', ['browserify', 'bgShell:esmangle']);
+        grunt.registerTask('travis', ['lint', 'test']);
+        grunt.registerTask('default', 'travis');
     };
 }());
 /* vim: set sw=4 ts=4 et tw=80 : */

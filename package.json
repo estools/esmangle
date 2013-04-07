@@ -1,48 +1,55 @@
 {
-    "name": "esmangle",
-    "description": "ECMAScript code mangler / minifier",
-    "homepage": "http://github.com/Constellation/esmangle.html",
-    "main": "lib/esmangle.js",
-    "bin": {
-        "esmangle": "./bin/esmangle.js"
-    },
-    "version": "0.0.13-dev",
-    "engines": {
-        "node": ">=0.6.0"
-    },
-    "directories": {
-        "lib": "./lib"
-    },
-    "maintainers": [{
-        "name": "Yusuke Suzuki",
-        "email": "utatane.tea@gmail.com",
-        "web": "http://github.com/Constellation"
-    }],
-    "repository": {
-        "type": "git",
-        "url": "http://github.com/Constellation/esmangle.git"
-    },
-    "dependencies": {
-        "esprima": "~ 1.0.2",
-        "escope": "~ 0.0.13",
-        "escodegen": "~ 0.0.20",
-        "estraverse": "~ 1.0.0",
-        "source-map": "~ 0.1.8",
-        "optimist": "*"
-    },
-    "devDependencies": {
-        "mocha": "*",
-        "chai": "*",
-        "browserify": "*",
-        "grunt": "0.4.1",
-        "grunt-contrib-jshint": "0.4.1"
-    },
-    "licenses": [{
-        "type": "BSD",
-        "url": "http://github.com/Constellation/esmangle/raw/master/LICENSE.BSD"
-    }],
-    "scripts": {
-        "test": "./node_modules/.bin/mocha",
-        "build": "mkdir -p build && ./node_modules/.bin/browserify tools/entry.js > build/esmangle.js && bin/esmangle.js build/esmangle.js > build/esmangle.min.js"
+  "name": "esmangle",
+  "description": "ECMAScript code mangler / minifier",
+  "homepage": "http://github.com/Constellation/esmangle.html",
+  "main": "lib/esmangle.js",
+  "bin": {
+    "esmangle": "./bin/esmangle.js"
+  },
+  "version": "0.0.13-dev",
+  "engines": {
+    "node": ">=0.6.0"
+  },
+  "directories": {
+    "lib": "./lib"
+  },
+  "maintainers": [
+    {
+      "name": "Yusuke Suzuki",
+      "email": "utatane.tea@gmail.com",
+      "web": "http://github.com/Constellation"
     }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/Constellation/esmangle.git"
+  },
+  "dependencies": {
+    "esprima": "~ 1.0.2",
+    "escope": "~ 0.0.13",
+    "escodegen": "~ 0.0.20",
+    "estraverse": "~ 1.0.0",
+    "source-map": "~ 0.1.8",
+    "optimist": "*"
+  },
+  "devDependencies": {
+    "chai": "*",
+    "browserify": "*",
+    "grunt": "~0.4.1",
+    "grunt-cli": "~0.1.7",
+    "grunt-contrib-jshint": "~0.4.1",
+    "grunt-mocha-test": "~0.2.0",
+    "grunt-bg-shell": "~2.0.1",
+    "grunt-contrib-copy": "~0.4.1"
+  },
+  "licenses": [
+    {
+      "type": "BSD",
+      "url": "http://github.com/Constellation/esmangle/raw/master/LICENSE.BSD"
+    }
+  ],
+  "scripts": {
+    "test": "node_modules/.bin/grunt travis",
+    "build": "node_modules/.bin/grunt build"
+  }
 }
