@@ -33,7 +33,8 @@
                     '*.js'
                 ],
                 options: {
-                    jshintrc: '.jshintrc'
+                    jshintrc: '.jshintrc',
+                    force: false
                 }
             },
             mochaTest: {

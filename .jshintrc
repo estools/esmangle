@@ -14,7 +14,6 @@
     "trailing": true,
 
     "onevar": true,
-    "force": false,
 
     "node": true
 }
