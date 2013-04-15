@@ -9,6 +9,7 @@ t.js
 /node_modules/
 /tools/
 /test/
+/build/
 /cover_html/
 /coverage/
 /.coverage_data/
