@@ -121,7 +121,7 @@ describe('compare mangling result', function () {
         if (/\.js$/.test(file)) {
             if (!/expected\.js$/.test(file)) {
                 p = file.replace(/\.js$/, '.expected.js');
-                it(path.join(root, 'test', 'compare', file), function () {
+                it(path.join('test', 'compare', file), function () {
                     var codeName, code, expectedName, tree, expected;
 
                     codeName = __dirname + '/compare/' + file;
