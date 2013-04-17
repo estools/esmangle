@@ -27,7 +27,7 @@
   "dependencies": {
     "esprima": "~ 1.0.2",
     "escope": "~ 0.0.13",
-    "escodegen": "~ 0.0.20",
+    "escodegen": "~ 0.0.21",
     "estraverse": "~ 1.1.0",
     "source-map": "~ 0.1.8",
     "optimist": "*"
