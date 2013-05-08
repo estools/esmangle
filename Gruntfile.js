@@ -21,65 +21,70 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
   THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-(function () {
+
+module.exports = function (grunt) {
     'use strict';
 
-    module.exports = function (grunt) {
-        grunt.initConfig({
-            jshint: {
-                all: [
-                    'Gruntfile.js',
-                    'lib/**/*.js',
-                    '*.js'
-                ],
-                options: {
-                    jshintrc: '.jshintrc',
-                    force: false
-                }
-            },
-            mochaTest: {
-                files: ['test/*.js']
-            },
-            mochaTestConfig: {
-                options: {
-                    reporter: 'spec'
-                }
-            },
-            bgShell: {
-                browserify: {
-                    cmd: 'node_modules/.bin/browserify tools/entry.js -o build/esmangle.js',
-                    stdout: true,
-                    stderr: true,
-                    bg: false,
-                    fail: true
-                },
-                esmangle: {
-                    cmd: 'bin/esmangle.js build/esmangle.js -o build/esmangle.min.js',
-                    stdout: true,
-                    stderr: true,
-                    bg: false,
-                    fail: true
-                }
+    var path = require('path');
+
+    grunt.initConfig({
+        jshint: {
+            all: [
+                'Gruntfile.js',
+                'lib/**/*.js',
+                '*.js'
+            ],
+            options: {
+                jshintrc: '.jshintrc',
+                force: false
             }
-        });
+        },
+        mochaTest: {
+            files: ['test/*.js']
+        },
+        mochaTestConfig: {
+            options: {
+                reporter: 'spec'
+            }
+        },
+        bgShell: {
+            browserify: {
+                cmd: 'node_modules/.bin/browserify tools/entry.js -o build/esmangle.js',
+                stdout: true,
+                stderr: true,
+                bg: false,
+                fail: true
+            },
+            esmangle: {
+                cmd: 'bin/esmangle.js build/esmangle.js -o build/esmangle.min.js',
+                stdout: true,
+                stderr: true,
+                bg: false,
+                fail: true
+            }
+        }
+    });
 
-        grunt.registerTask('directory:build', 'create build directory', function () {
-            grunt.file.mkdir('build');
-        });
+    // load regression tests config
+    grunt.loadTasks(path.join('test', 'regression'));
 
-        grunt.registerTask('browserify', ['directory:build', 'bgShell:browserify']);
+    grunt.registerTask('directory:build', 'create build directory', function () {
+        grunt.file.mkdir('build');
+    });
 
-        // load tasks
-        grunt.loadNpmTasks('grunt-contrib-jshint');
-        grunt.loadNpmTasks('grunt-mocha-test');
-        grunt.loadNpmTasks('grunt-bg-shell');
+    grunt.registerTask('browserify', ['directory:build', 'bgShell:browserify']);
 
-        // alias
-        grunt.registerTask('test', 'mochaTest');
-        grunt.registerTask('lint', 'jshint');
-        grunt.registerTask('build', ['browserify', 'bgShell:esmangle']);
-        grunt.registerTask('travis', ['lint', 'test']);
-        grunt.registerTask('default', 'travis');
-    };
-}());
+    // load tasks
+    grunt.loadNpmTasks('grunt-contrib-jshint');
+    grunt.loadNpmTasks('grunt-mocha-test');
+    grunt.loadNpmTasks('grunt-bg-shell');
+    grunt.loadNpmTasks('grunt-update-submodules');
+
+    // alias
+    grunt.registerTask('test', 'mochaTest');
+    grunt.registerTask('lint', 'jshint');
+    grunt.registerTask('build', ['browserify', 'bgShell:esmangle']);
+    grunt.registerTask('travis', ['lint', 'test']);
+    grunt.registerTask('default','travis');
+};
 /* vim: set sw=4 ts=4 et tw=80 : */
