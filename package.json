@@ -42,7 +42,8 @@
     "grunt-contrib-copy": "~0.4.1",
     "grunt-update-submodules": "~0.2.0",
     "grunt-contrib-clean": "~0.4.1",
-    "grunt-shell": "~0.2.2"
+    "grunt-shell": "~0.2.2",
+    "async": "~0.2.8"
   },
   "licenses": [
     {

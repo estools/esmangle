@@ -100,7 +100,7 @@ module.exports = function (grunt) {
     grunt.registerTask('test', 'mochaTest');
     grunt.registerTask('lint', 'jshint');
     grunt.registerTask('build', ['browserify', 'shell:esmangle']);
-    grunt.registerTask('travis', ['lint', 'test']);
+    grunt.registerTask('travis', ['lint', 'test', 'test:regression:esmangle']);
     grunt.registerTask('default','travis');
 };
 /* vim: set sw=4 ts=4 et tw=80 : */
