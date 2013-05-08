@@ -131,7 +131,13 @@ module.exports = function (grunt) {
             spawn('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: submodule })
             .then(function (res) {
                 if (res.stdout !== 'master') {
-                    return spawn('git', ['checkout', 'master'], { cwd: submodule })
+                    return spawn('git', ['reset', '--hard'], { cwd: submodule })
+                    .then(function () {
+                        return spawn('git', ['clean', '-df'], { cwd: submodule });
+                    })
+                    .then(function () {
+                        return spawn('git', ['checkout', 'master'], { cwd: submodule });
+                    });
                 }
             })
             .then(function () {
