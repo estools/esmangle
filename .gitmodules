@@ -1,3 +1,0 @@
-[submodule "test/regression/esmangle"]
-	path = test/regression/esmangle
-	url = https://github.com/Constellation/esmangle.git
