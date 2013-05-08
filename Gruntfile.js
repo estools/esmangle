@@ -27,6 +27,23 @@ module.exports = function (grunt) {
 
     var path = require('path');
 
+
+    grunt.extendConfig = function(update) {
+        function extend(target, update) {
+            return Object.getOwnPropertyNames(update).reduce(function (result, key) {
+                if (key in result) {
+                    result[key] = extend(result[key], update[key]);
+                } else {
+                    result[key] = update[key];
+                }
+                return result;
+            }, target);
+        }
+
+        grunt.initConfig(extend(grunt.config(), update));
+    };
+
+
     grunt.initConfig({
         jshint: {
             all: [
@@ -47,20 +64,16 @@ module.exports = function (grunt) {
                 reporter: 'spec'
             }
         },
-        bgShell: {
+        shell: {
             browserify: {
-                cmd: 'node_modules/.bin/browserify tools/entry.js -o build/esmangle.js',
+                command: 'node_modules/.bin/browserify tools/entry.js -o build/esmangle.js',
                 stdout: true,
-                stderr: true,
-                bg: false,
-                fail: true
+                stderr: true
             },
             esmangle: {
-                cmd: 'bin/esmangle.js build/esmangle.js -o build/esmangle.min.js',
+                command: 'bin/esmangle.js build/esmangle.js -o build/esmangle.min.js',
                 stdout: true,
-                stderr: true,
-                bg: false,
-                fail: true
+                stderr: true
             }
         }
     });
@@ -72,18 +85,21 @@ module.exports = function (grunt) {
         grunt.file.mkdir('build');
     });
 
-    grunt.registerTask('browserify', ['directory:build', 'bgShell:browserify']);
+    grunt.registerTask('browserify', ['directory:build', 'shell:browserify']);
 
     // load tasks
+    grunt.loadNpmTasks('grunt-contrib-copy');
+    grunt.loadNpmTasks('grunt-contrib-clean');
     grunt.loadNpmTasks('grunt-contrib-jshint');
     grunt.loadNpmTasks('grunt-mocha-test');
     grunt.loadNpmTasks('grunt-bg-shell');
     grunt.loadNpmTasks('grunt-update-submodules');
+    grunt.loadNpmTasks('grunt-shell');
 
     // alias
     grunt.registerTask('test', 'mochaTest');
     grunt.registerTask('lint', 'jshint');
-    grunt.registerTask('build', ['browserify', 'bgShell:esmangle']);
+    grunt.registerTask('build', ['browserify', 'shell:esmangle']);
     grunt.registerTask('travis', ['lint', 'test']);
     grunt.registerTask('default','travis');
 };

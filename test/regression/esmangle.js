@@ -21,10 +21,51 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
   THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+
 module.exports = function (grunt) {
     'use strict';
-    grunt.registerTask('test:regression:esmangle', 'esmangle regression test', function () {
-        var done = this.async();
+    var path = require('path');
+
+    grunt.extendConfig({
+        copy: {
+            esmangle: {
+                expand: true,
+                src: [ '**/*' ],
+                dest: path.join('test', 'regression', 'esmangle.tmp'),
+                filter: 'isFile',
+                cwd: path.join('test', 'regression', 'esmangle')
+            }
+        },
+        clean: {
+            esmangle: [
+                path.join('test', 'regression', 'esmangle.tmp')
+            ]
+        },
+        shell: {
+            installEsmangle: {
+                command: 'npm install',
+                options: {
+                    stdout: true,
+                    stderr: true,
+                    execOptions: {
+                        cwd: path.join('test', 'regression', 'esmangle')
+                    }
+                }
+            }
+        }
     });
+
+    grunt.registerTask('test:regression:esmangle:main', 'esmangle regression test', function () {
+        var done = this.async();
+        done();
+    });
+
+    grunt.registerTask('test:regression:esmangle', [
+        'update_submodules',
+        'shell:installEsmangle',
+        'copy:esmangle',
+        'test:regression:esmangle:main',
+        'clean:esmangle'
+    ]);
 };
 /* vim: set sw=4 ts=4 et tw=80 : */
