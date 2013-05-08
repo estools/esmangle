@@ -25,10 +25,15 @@
 module.exports = function (grunt) {
     'use strict';
     var path = require('path'),
+        fs = require('fs'),
         child_process = require('child_process'),
         async = require('async'),
+        Q = require('q'),
         submodule = path.join('test', 'regression', 'esmangle'),
-        test = path.join('test', 'regression', 'esmangle.tmp');
+        test = path.join('test', 'regression', 'esmangle.tmp'),
+        REV;
+
+    REV = '675e4522936263f1b07ba1a5d10a06c152a170e5';
 
     grunt.extendConfig({
         copy: {
@@ -70,6 +75,79 @@ module.exports = function (grunt) {
         }
     });
 
+    function spawn(cmd, args, opts) {
+        var deferred = Q.defer();
+
+        grunt.util.spawn({
+            cmd: cmd,
+            args: args,
+            opts: opts
+        }, function (err, res) {
+            if (err) {
+                deferred.reject(err);
+                return;
+            }
+            deferred.resolve(res);
+        });
+
+        return deferred.promise;
+    }
+
+    // Because of submodule recursive dependency, we write clone code manually.
+    // (Not using git submodule)
+    grunt.registerTask('test:regression:esmangle:clone', 'esmangle clone', function () {
+        var done = this.async();
+
+		grunt.verbose.writeln("Cloning esmangle regression test...");
+
+        if (fs.existsSync(submodule)) {
+            done();
+            return;
+        }
+
+        return spawn('git', ['clone', 'https://github.com/Constellation/esmangle.git', submodule])
+        .then(function(res) {
+            done();
+        })
+        .fail(function(err) {
+            grunt.verbose.error(err);
+            done(err);
+        });
+    });
+
+    grunt.registerTask('test:regression:esmangle:update', 'esmangle update', function () {
+        var done = this.async();
+
+		grunt.verbose.writeln("Updating esmangle regression test...");
+
+        spawn('git', ['rev-parse', '--verify', 'HEAD'], { cwd: submodule })
+        .then(function (res) {
+            if (res.stdout.trim() === REV) {
+                // desired revision
+                done();
+                return;
+            }
+
+            spawn('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: submodule })
+            .then(function (res) {
+                if (res.stdout !== 'master') {
+                    return spawn('git', ['checkout', 'master'], { cwd: submodule })
+                }
+            })
+            .then(function () {
+                return spawn('git', ['pull', 'origin', 'master'], { cwd: submodule });
+            })
+            .then(function () {
+                return spawn('git', ['checkout', REV], { cwd: submodule });
+            })
+            .then(function () { done(); });
+        })
+        .fail(function (err) {
+            grunt.verbose.error(err);
+            done(err);
+        });
+    });
+
     grunt.registerTask('test:regression:esmangle:apply', 'esmangle apply', function () {
         var done = this.async(),
             result = [],
@@ -96,7 +174,8 @@ module.exports = function (grunt) {
     });
 
     grunt.registerTask('test:regression:esmangle', [
-        'update_submodules',
+        'test:regression:esmangle:clone',
+        'test:regression:esmangle:update',
         'shell:installEsmangle',
         'copy:esmangle',
         'test:regression:esmangle:apply',

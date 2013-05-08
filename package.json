@@ -43,7 +43,8 @@
     "grunt-update-submodules": "~0.2.0",
     "grunt-contrib-clean": "~0.4.1",
     "grunt-shell": "~0.2.2",
-    "async": "~0.2.8"
+    "async": "~0.2.8",
+    "q": "~0.9.3"
   },
   "licenses": [
     {
