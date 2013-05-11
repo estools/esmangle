@@ -49,7 +49,8 @@ module.exports = function (grunt) {
             all: [
                 'Gruntfile.js',
                 'lib/**/*.js',
-                '*.js'
+                '*.js',
+                'test/regression/*.js'
             ],
             options: {
                 jshintrc: '.jshintrc',

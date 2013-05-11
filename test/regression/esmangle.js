@@ -98,7 +98,7 @@ module.exports = function (grunt) {
     grunt.registerTask('test:regression:esmangle:clone', 'esmangle clone', function () {
         var done = this.async();
 
-		grunt.verbose.writeln("Cloning esmangle regression test...");
+		grunt.verbose.writeln('Cloning esmangle regression test...');
 
         if (fs.existsSync(submodule)) {
             done();
@@ -106,7 +106,7 @@ module.exports = function (grunt) {
         }
 
         return spawn('git', ['clone', 'https://github.com/Constellation/esmangle.git', submodule])
-        .then(function(res) {
+        .then(function() {
             done();
         })
         .fail(function(err) {
@@ -118,7 +118,7 @@ module.exports = function (grunt) {
     grunt.registerTask('test:regression:esmangle:update', 'esmangle update', function () {
         var done = this.async();
 
-		grunt.verbose.writeln("Updating esmangle regression test...");
+		grunt.verbose.writeln('Updating esmangle regression test...');
 
         spawn('git', ['rev-parse', '--verify', 'HEAD'], { cwd: submodule })
         .then(function (res) {
@@ -159,7 +159,7 @@ module.exports = function (grunt) {
             result = [],
             log;
 
-        grunt.file.recurse(path.join(test, 'lib'), function (abspath, rootdir, subdir, filename) {
+        grunt.file.recurse(path.join(test, 'lib'), function (abspath) {
             result.push(abspath);
         });
         log = grunt.log.write('minifying files...');
