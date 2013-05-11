@@ -68,7 +68,8 @@ defaultPost = [
     esmangle.require('post/transform-static-to-dynamic-property-access'),
     esmangle.require('post/transform-infinity'),
     esmangle.require('post/rewrite-boolean'),
-    esmangle.require('post/rewrite-conditional-expression')
+    esmangle.require('post/rewrite-conditional-expression'),
+    esmangle.require('post/omit-parens-in-void-context-iife')
 ];
 
 function doOptimize(tree, pass, post) {
