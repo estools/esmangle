@@ -40,6 +40,13 @@ module.exports = function (grunt) {
                 cwd: submodule
             }
         },
+        esmangle_apply: {
+            'coffee-script-redux': {
+                files: {
+                    src: path.join(submodule, 'lib', '**', '*.js')
+                }
+            }
+        },
         shell: {
             executeCoffeeScriptReduxTest: {
                 command: 'npm test',
@@ -56,35 +63,11 @@ module.exports = function (grunt) {
         }
     });
 
-    grunt.registerTask('test:regression:coffee-script-redux:apply', 'esmangle apply', function () {
-        var done = this.async(),
-            result = [],
-            log;
-        grunt.file.recurse(path.join(submodule, 'lib'), function (abspath) {
-            result.push(abspath);
-        });
-        log = grunt.log.write('minifying files...');
-        async.eachLimit(result, 10, function (item, callback) {
-            var escaped = JSON.stringify(item);
-            child_process.exec('node bin/esmangle.js ' + escaped + ' -o ' + escaped, function (err) {
-                callback(err);
-            });
-        }, function (err) {
-            if (err) {
-                log.error();
-                done(false);
-            } else {
-                log.ok();
-                done(true);
-            }
-        });
-    });
-
     grunt.registerTask('test:regression:coffee-script-redux', [
         'git_reset_hard:coffee-script-redux',
         'update_submodules',
         'npm_install:coffee-script-redux',
-        'test:regression:coffee-script-redux:apply',
+        'esmangle_apply:coffee-script-redux',
         'shell:executeCoffeeScriptReduxTest',
         'git_reset_hard:coffee-script-redux'
     ]);

@@ -45,6 +45,13 @@ module.exports = function (grunt) {
                 cwd: submodule
             }
         },
+        esmangle_apply: {
+            esmangle: {
+                files: {
+                    src: path.join(submodule, 'lib', '**', '*.js')
+                }
+            }
+        },
         shell: {
             executeEsmangleTest: {
                 command: '../../../node_modules/.bin/grunt mochaTest',
@@ -140,37 +147,12 @@ module.exports = function (grunt) {
         });
     });
 
-    grunt.registerTask('test:regression:esmangle:apply', 'esmangle apply', function () {
-        var done = this.async(),
-            result = [],
-            log;
-
-        grunt.file.recurse(path.join(submodule, 'lib'), function (abspath) {
-            result.push(abspath);
-        });
-        log = grunt.log.write('minifying files...');
-        async.eachLimit(result, 10, function (item, callback) {
-            var escaped = JSON.stringify(item);
-            child_process.exec('node bin/esmangle.js ' + escaped + ' -o ' + escaped, function (err) {
-                callback(err);
-            });
-        }, function (err) {
-            if (err) {
-                log.error();
-                done(false);
-            } else {
-                log.ok();
-                done(true);
-            }
-        });
-    });
-
     grunt.registerTask('test:regression:esmangle', [
         'git_reset_hard:esmangle',
         'test:regression:esmangle:clone',
         'test:regression:esmangle:update',
         'npm_install:esmangle',
-        'test:regression:esmangle:apply',
+        'esmangle_apply:esmangle',
         'shell:executeEsmangleTest',
         'git_reset_hard:esmangle'
     ]);

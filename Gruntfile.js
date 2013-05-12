@@ -25,7 +25,9 @@
 module.exports = function (grunt) {
     'use strict';
 
-    var path = require('path');
+    var path = require('path'),
+        child_process = require('child_process'),
+        async = require('async');
 
 
     grunt.extendConfig = function(update) {
@@ -128,6 +130,26 @@ module.exports = function (grunt) {
             shell: cfg
         });
         grunt.task.run('shell:' + name);
+    });
+
+    grunt.registerMultiTask('esmangle_apply', function () {
+        var done = this.async(),
+            log;
+        log = grunt.log.write('minifying ' + this.filesSrc.length + ' files...');
+        async.eachLimit(this.filesSrc, 10, function (item, callback) {
+            var escaped = JSON.stringify(item);
+            child_process.exec('node bin/esmangle.js ' + escaped + ' -o ' + escaped, function (err) {
+                callback(err);
+            });
+        }, function (err) {
+            if (err) {
+                log.error();
+                done(false);
+            } else {
+                log.ok();
+                done(true);
+            }
+        });
     });
 
     grunt.registerTask('directory:build', 'create build directory', function () {

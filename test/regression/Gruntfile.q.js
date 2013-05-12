@@ -53,37 +53,24 @@ module.exports = function (grunt) {
                 }
             }
 
-        }
-    });
-
-    grunt.registerTask('test:regression:q:apply', 'esmangle apply', function () {
-        var done = this.async(),
-            result = [],
-            log;
-        result.push(path.join(submodule, 'q.js'));
-        result.push(path.join(submodule, 'queue.js'));
-        log = grunt.log.write('minifying files...');
-        async.eachLimit(result, 10, function (item, callback) {
-            var escaped = JSON.stringify(item);
-            child_process.exec('node bin/esmangle.js ' + escaped + ' -o ' + escaped, function (err) {
-                callback(err);
-            });
-        }, function (err) {
-            if (err) {
-                log.error();
-                done(false);
-            } else {
-                log.ok();
-                done(true);
+        },
+        esmangle_apply: {
+            q: {
+                files: {
+                    src: [
+                        path.join(submodule, 'q.js'),
+                        path.join(submodule, 'queue.js')
+                    ]
+                }
             }
-        });
+        }
     });
 
     grunt.registerTask('test:regression:q', [
         'git_reset_hard:q',
         'update_submodules',
         'npm_install:q',
-        'test:regression:q:apply',
+        'esmangle_apply:q',
         'shell:executeQTest',
         'git_reset_hard:q'
     ]);
