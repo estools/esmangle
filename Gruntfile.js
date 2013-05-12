@@ -82,6 +82,27 @@ module.exports = function (grunt) {
     // load regression tests config
     grunt.loadTasks(path.join('test', 'regression'));
 
+    grunt.registerMultiTasks('git_reset_hard', function () {
+        var options = this.options(),
+            done = this.async(),
+            cwd = options.cwd;
+        grunt.verbose.writeln('Resetting ' + cwd + ' ...');
+        grunt.util.spawn({
+            cmd: 'git',
+            args: ['reset', '--hard'],
+            opts: {
+                cwd: cwd
+            }
+        }, function (error) {
+            if (error) {
+                grunt.verbose.error(error);
+                done(error);
+                return;
+            }
+            done();
+        });
+    });
+
     grunt.registerTask('directory:build', 'create build directory', function () {
         grunt.file.mkdir('build');
     });
