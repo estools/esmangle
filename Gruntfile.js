@@ -83,9 +83,14 @@ module.exports = function (grunt) {
     grunt.loadTasks(path.join('test', 'regression'));
 
     grunt.registerMultiTask('git_reset_hard', function () {
-        var options = this.options(),
-            done = this.async(),
+        var done = this.async(),
             cwd = this.data.cwd;
+
+        if (!grunt.file.exists(cwd)) {
+            done();
+            return;
+        }
+
         grunt.verbose.writeln('Resetting ' + cwd + ' ...');
         grunt.util.spawn({
             cmd: 'git',
