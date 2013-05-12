@@ -26,8 +26,6 @@ module.exports = function (grunt) {
     'use strict';
     var path = require('path'),
         fs = require('fs'),
-        child_process = require('child_process'),
-        async = require('async'),
         Q = require('q'),
         submodule = path.join('test', 'regression', 'esmangle'),
         REV;

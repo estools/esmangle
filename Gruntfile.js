@@ -29,7 +29,6 @@ module.exports = function (grunt) {
         child_process = require('child_process'),
         async = require('async');
 
-
     grunt.extendConfig = function(update) {
         function extend(target, update) {
             return Object.getOwnPropertyNames(update).reduce(function (result, key) {

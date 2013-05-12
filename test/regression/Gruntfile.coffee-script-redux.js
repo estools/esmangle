@@ -25,8 +25,6 @@
 module.exports = function (grunt) {
     'use strict';
     var path = require('path'),
-        child_process = require('child_process'),
-        async = require('async'),
         submodule = path.join('test', 'regression', 'coffee-script-redux');
 
     grunt.extendConfig({
