@@ -30,23 +30,15 @@ module.exports = function (grunt) {
         async = require('async'),
         Q = require('q'),
         submodule = path.join('test', 'regression', 'esmangle'),
-        test = path.join('test', 'regression', 'esmangle.tmp'),
         REV;
 
     REV = '675e4522936263f1b07ba1a5d10a06c152a170e5';
 
     grunt.extendConfig({
-        copy: {
+        git_reset_hard: {
             esmangle: {
-                expand: true,
-                src: [ '**/*' ],
-                dest: test,
-                filter: 'isFile',
                 cwd: submodule
             }
-        },
-        clean: {
-            esmangle: [ test ]
         },
         shell: {
             installEsmangle: {
@@ -67,7 +59,7 @@ module.exports = function (grunt) {
                     stderr: true,
                     failOnError: true,
                     execOptions: {
-                        cwd: test
+                        cwd: submodule
                     }
                 }
             }
@@ -159,7 +151,7 @@ module.exports = function (grunt) {
             result = [],
             log;
 
-        grunt.file.recurse(path.join(test, 'lib'), function (abspath) {
+        grunt.file.recurse(path.join(submodule, 'lib'), function (abspath) {
             result.push(abspath);
         });
         log = grunt.log.write('minifying files...');
@@ -180,13 +172,13 @@ module.exports = function (grunt) {
     });
 
     grunt.registerTask('test:regression:esmangle', [
+        'git_reset_hard:esmangle',
         'test:regression:esmangle:clone',
         'test:regression:esmangle:update',
         'shell:installEsmangle',
-        'copy:esmangle',
         'test:regression:esmangle:apply',
         'shell:executeEsmangleTest',
-        'clean:esmangle'
+        'git_reset_hard:esmangle'
     ]);
 };
 /* vim: set sw=4 ts=4 et tw=80 : */
