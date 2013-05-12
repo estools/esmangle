@@ -1,6 +1,8 @@
 esmangle ([esmangle](http://github.com/Constellation/esmangle)) is
 mangler / minifier for [Parser API](https://developer.mozilla.org/en/SpiderMonkey/Parser_API) AST.
 
+[![Build Status](https://secure.travis-ci.org/Constellation/esmangle.png)](http://travis-ci.org/Constellation/esmangle) [![Build Status](https://drone.io/github.com/Constellation/esmangle/status.png)](https://drone.io/github.com/Constellation/esmangle/latest)
+
 
 ### Install
 
@@ -77,5 +79,3 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-[![Build Status](https://secure.travis-ci.org/Constellation/esmangle.png)](http://travis-ci.org/Constellation/esmangle)
