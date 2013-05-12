@@ -40,9 +40,6 @@ module.exports = function (grunt) {
                 cwd: submodule
             }
         },
-        clean: {
-            q: [ test ]
-        },
         shell: {
             installQ: {
                 command: 'npm install',
@@ -98,8 +95,7 @@ module.exports = function (grunt) {
         'copy:q',
         'shell:installQ',
         'test:regression:q:apply',
-        'shell:executeQTest',
-        'clean:q'
+        'shell:executeQTest'
     ]);
 };
 /* vim: set sw=4 ts=4 et tw=80 : */
