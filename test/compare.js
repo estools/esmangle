@@ -72,19 +72,31 @@ defaultPost = [
     esmangle.require('post/omit-parens-in-void-context-iife')
 ];
 
-function doOptimize(tree, pass, post) {
-    tree = esmangle.optimize(tree, [ pass, { once: true, pass: post } ], {
+function extend(target, update) {
+    return Object.getOwnPropertyNames(update).reduce(function (result, key) {
+        if (key in result) {
+            result[key] = extend(result[key], update[key]);
+        } else {
+            result[key] = update[key];
+        }
+        return result;
+    }, target);
+}
+
+function doOptimize(tree, pass, post, options) {
+    tree = esmangle.optimize(tree, [ pass, { once: true, pass: post } ], extend({
         directive: true
-    });
-    return esmangle.mangle(tree, {
+    }, options));
+    return esmangle.mangle(tree, extend({
         destructive: true
-    });
+    }, options));
 }
 
 function doTest(tree, expected) {
-    var pass, post, actual;
+    var pass, post, options, actual;
     pass = defaultPass;
     post = defaultPost;
+    options = {};
     tree.comments.some(function (comment) {
         var parsed;
         try {
@@ -96,12 +108,13 @@ function doTest(tree, expected) {
                 post = parsed.post ? parsed.post.map(function (name) {
                     return esmangle.require('post/' + name);
                 }) : [];
+                options = parsed.options ? parsed.options : {};
                 return true;
             }
         } catch (e) { }
         return false;
     });
-    tree = doOptimize(tree, pass, post);
+    tree = doOptimize(tree, pass, post, options);
     actual = escodegen.generate(tree, {
         format: {
             renumber: true,
