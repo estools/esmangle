@@ -41,6 +41,7 @@ Error.stackTraceLimit = Infinity;
 esmangle = require(root);
 
 argv = optimist.usage("Usage: $0 file")
+    .describe('help', 'show help')
     .boolean('source-map')
     .describe('source-map', 'dump source-map')
     .string('o')
@@ -48,7 +49,8 @@ argv = optimist.usage("Usage: $0 file")
     .describe('o', 'output file')
     .argv;
 
-if (argv.output && Array.isArray(argv.output) && argv.output.length > 1) {
+if (argv.help ||
+    (argv.output && Array.isArray(argv.output) && argv.output.length > 1)) {
     optimist.showHelp();
     console.error('multiple output files are specified');
     process.exit(1);
