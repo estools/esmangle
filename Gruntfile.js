@@ -82,10 +82,10 @@ module.exports = function (grunt) {
     // load regression tests config
     grunt.loadTasks(path.join('test', 'regression'));
 
-    grunt.registerMultiTasks('git_reset_hard', function () {
+    grunt.registerMultiTask('git_reset_hard', function () {
         var options = this.options(),
             done = this.async(),
-            cwd = options.cwd;
+            cwd = this.data.cwd;
         grunt.verbose.writeln('Resetting ' + cwd + ' ...');
         grunt.util.spawn({
             cmd: 'git',

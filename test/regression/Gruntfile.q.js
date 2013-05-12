@@ -27,16 +27,11 @@ module.exports = function (grunt) {
     var path = require('path'),
         child_process = require('child_process'),
         async = require('async'),
-        submodule = path.join('test', 'regression', 'q'),
-        test = path.join('test', 'regression', 'q.tmp');
+        submodule = path.join('test', 'regression', 'q');
 
     grunt.extendConfig({
-        copy: {
+        git_reset_hard: {
             q: {
-                expand: true,
-                src: [ '**/*' ],
-                dest: test,
-                filter: 'isFile',
                 cwd: submodule
             }
         },
@@ -48,7 +43,7 @@ module.exports = function (grunt) {
                     stderr: true,
                     failOnError: true,
                     execOptions: {
-                        cwd: test
+                        cwd: submodule
                     }
                 }
             },
@@ -59,7 +54,7 @@ module.exports = function (grunt) {
                     stderr: true,
                     failOnError: true,
                     execOptions: {
-                        cwd: test
+                        cwd: submodule
                     }
                 }
             }
@@ -71,8 +66,8 @@ module.exports = function (grunt) {
         var done = this.async(),
             result = [],
             log;
-        result.push(path.join(test, 'q.js'));
-        result.push(path.join(test, 'queue.js'));
+        result.push(path.join(submodule, 'q.js'));
+        result.push(path.join(submodule, 'queue.js'));
         log = grunt.log.write('minifying files...');
         async.eachLimit(result, 10, function (item, callback) {
             var escaped = JSON.stringify(item);
@@ -91,11 +86,12 @@ module.exports = function (grunt) {
     });
 
     grunt.registerTask('test:regression:q', [
+        'git_reset_hard:q',
         'update_submodules',
-        'copy:q',
         'shell:installQ',
         'test:regression:q:apply',
-        'shell:executeQTest'
+        'shell:executeQTest',
+        'git_reset_hard:q'
     ]);
 };
 /* vim: set sw=4 ts=4 et tw=80 : */
