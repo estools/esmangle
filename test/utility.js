@@ -37,6 +37,8 @@ var fs = require('fs'),
     defaultPost,
     existsSync;
 
+Error.stackTraceLimit = Infinity;
+
 existsSync = fs.existsSync || path.existsSync;
 esmangle = require(root);
 common = require(path.join(root, 'lib', 'common'));

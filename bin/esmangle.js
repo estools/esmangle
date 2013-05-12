@@ -36,6 +36,8 @@ var fs = require('fs'),
     post,
     passes;
 
+Error.stackTraceLimit = Infinity;
+
 esmangle = require(root);
 
 argv = optimist.usage("Usage: $0 file")
