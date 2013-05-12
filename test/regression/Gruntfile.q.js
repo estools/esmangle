@@ -35,18 +35,12 @@ module.exports = function (grunt) {
                 cwd: submodule
             }
         },
+        npm_install: {
+            q: {
+                cwd: submodule
+            }
+        },
         shell: {
-            installQ: {
-                command: 'npm install',
-                options: {
-                    stdout: true,
-                    stderr: true,
-                    failOnError: true,
-                    execOptions: {
-                        cwd: submodule
-                    }
-                }
-            },
             executeQTest: {
                 command: 'npm test',
                 options: {
@@ -88,7 +82,7 @@ module.exports = function (grunt) {
     grunt.registerTask('test:regression:q', [
         'git_reset_hard:q',
         'update_submodules',
-        'shell:installQ',
+        'npm_install:q',
         'test:regression:q:apply',
         'shell:executeQTest',
         'git_reset_hard:q'

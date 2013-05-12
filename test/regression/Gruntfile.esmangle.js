@@ -40,18 +40,12 @@ module.exports = function (grunt) {
                 cwd: submodule
             }
         },
+        npm_install: {
+            esmangle: {
+                cwd: submodule
+            }
+        },
         shell: {
-            installEsmangle: {
-                command: 'npm install',
-                options: {
-                    stdout: true,
-                    stderr: true,
-                    failOnError: true,
-                    execOptions: {
-                        cwd: submodule
-                    }
-                }
-            },
             executeEsmangleTest: {
                 command: '../../../node_modules/.bin/grunt mochaTest',
                 options: {
@@ -175,7 +169,7 @@ module.exports = function (grunt) {
         'git_reset_hard:esmangle',
         'test:regression:esmangle:clone',
         'test:regression:esmangle:update',
-        'shell:installEsmangle',
+        'npm_install:esmangle',
         'test:regression:esmangle:apply',
         'shell:executeEsmangleTest',
         'git_reset_hard:esmangle'

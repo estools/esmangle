@@ -108,6 +108,28 @@ module.exports = function (grunt) {
         });
     });
 
+    grunt.registerMultiTask('npm_install', function () {
+        var name = '$npm_install$/' + this.target,
+            cwd = this.data.cwd,
+            cfg = {};
+        grunt.verbose.writeln('shell:' + name);
+        cfg[name] = {
+            command: 'npm install --silent',
+            options: {
+                stdout: true,
+                stderr: true,
+                failOnError: true,
+                execOptions: {
+                    cwd: cwd
+                }
+            }
+        };
+        grunt.extendConfig({
+            shell: cfg
+        });
+        grunt.task.run('shell:' + name);
+    });
+
     grunt.registerTask('directory:build', 'create build directory', function () {
         grunt.file.mkdir('build');
     });
@@ -125,7 +147,8 @@ module.exports = function (grunt) {
     // alias
     grunt.registerTask('test:regression', [
         'test:regression:esmangle',
-        'test:regression:q'
+        'test:regression:q',
+        'test:regression:coffee-script-redux'
     ]);
     grunt.registerTask('test', 'mochaTest');
     grunt.registerTask('lint', 'jshint');

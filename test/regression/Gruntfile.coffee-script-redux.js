@@ -35,18 +35,12 @@ module.exports = function (grunt) {
                 cwd: submodule
             }
         },
+        npm_install: {
+            'coffee-script-redux': {
+                cwd: submodule
+            }
+        },
         shell: {
-            installCoffeeScriptRedux: {
-                command: 'npm install',
-                options: {
-                    stdout: true,
-                    stderr: true,
-                    failOnError: true,
-                    execOptions: {
-                        cwd: submodule
-                    }
-                }
-            },
             executeCoffeeScriptReduxTest: {
                 command: 'npm test',
                 options: {
@@ -89,7 +83,7 @@ module.exports = function (grunt) {
     grunt.registerTask('test:regression:coffee-script-redux', [
         'git_reset_hard:coffee-script-redux',
         'update_submodules',
-        'shell:installCoffeeScriptRedux',
+        'npm_install:coffee-script-redux',
         'test:regression:coffee-script-redux:apply',
         'shell:executeCoffeeScriptReduxTest',
         'git_reset_hard:coffee-script-redux'
