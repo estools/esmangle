@@ -3,7 +3,6 @@ mangler / minifier for [Parser API](https://developer.mozilla.org/en/SpiderMonke
 
 [![Build Status](https://secure.travis-ci.org/Constellation/esmangle.png)](http://travis-ci.org/Constellation/esmangle) [![Build Status](https://drone.io/github.com/Constellation/esmangle/status.png)](https://drone.io/github.com/Constellation/esmangle/latest)
 
-
 ### Install
 
 esmangle can be used in a web browser: <a href="http://constellation.github.com/esmangle/javascripts/esmangle.js" target="_blank">Download</a>
@@ -50,7 +49,10 @@ Get more compressed result: (in Node.js)
         }
     }));  // dump AST
 
-### Note
+
+### Design
+
+<iframe class="speakerdeck-iframe" style="border: 0px; background-color: transparent; margin: 0px; padding: 0px; border-top-left-radius: 5px; border-top-right-radius: 5px; border-bottom-right-radius: 5px; border-bottom-left-radius: 5px; width: 710px; height: 594.5000000000014px; background-position: initial initial; background-repeat: initial initial;" frameborder="0" src="https://speakerdeck.com/player/86f8dab07a840130222e12313809347f?" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
 
 This resolution algorithm is based on my bytecode compiler [iv / lv5 / railgun](https://github.com/Constellation/iv/tree/master/iv/lv5/railgun).
 
