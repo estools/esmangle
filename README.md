@@ -52,8 +52,7 @@ Get more compressed result: (in Node.js)
 
 ### Design
 
-<iframe class="speakerdeck-iframe" style="border: 0px; background-color: transparent; margin: 0px; padding: 0px; border-top-left-radius: 5px; border-top-right-radius: 5px; border-bottom-right-radius: 5px; border-bottom-left-radius: 5px; width: 710px; height: 594.5000000000014px; background-position: initial initial; background-repeat: initial initial;" frameborder="0" src="https://speakerdeck.com/player/86f8dab07a840130222e12313809347f?" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
-
+Slide is [here](https://speakerdeck.com/constellation/escodegen-and-esmangle-using-mozilla-javascript-ast-as-an-ir).
 This resolution algorithm is based on my bytecode compiler [iv / lv5 / railgun](https://github.com/Constellation/iv/tree/master/iv/lv5/railgun).
 
 ### License
