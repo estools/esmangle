@@ -1,1 +1,1 @@
-(function(a){switch(a){case 0:default:print('HELLO')}}())
+!function(a){switch(a){case 0:default:print('HELLO')}}()

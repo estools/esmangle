@@ -1,1 +1,1 @@
-(function(){return x?y:y?z:void 0}())
+!function(){return x?y:y?z:void 0}()

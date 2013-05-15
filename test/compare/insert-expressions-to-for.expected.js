@@ -1,1 +1,1 @@
-(function(){for(i=20;;);}())
+!function(){for(i=20;;);}()

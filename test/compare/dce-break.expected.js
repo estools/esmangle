@@ -1,1 +1,1 @@
-(function(){for(;;)break;ok()}())
+!function(){for(;;)break;ok()}()

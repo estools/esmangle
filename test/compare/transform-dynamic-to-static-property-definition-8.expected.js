@@ -1,1 +1,1 @@
-(function(a){a={NaN:20}}())
+!function(a){a={NaN:20}}()

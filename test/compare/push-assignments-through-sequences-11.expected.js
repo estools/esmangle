@@ -1,1 +1,1 @@
-(function(d){d={},d.t+(a(),b(),c())}())
+!function(d){d={},d.t+(a(),b(),c())}()

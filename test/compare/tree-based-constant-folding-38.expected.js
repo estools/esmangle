@@ -1,1 +1,1 @@
-(function(){a?0:b}())
+!function(){a?0:b}()

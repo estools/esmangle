@@ -1,3 +1,8 @@
+/*{
+    "options": {
+        "preserveCompletionValue": true
+    }
+}*/
 if (cond) {
   try { } catch (e) { }
   // do not optimize it

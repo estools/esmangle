@@ -1,1 +1,1 @@
-(function(){for(test||test();!ok&&test();ok||test());}())
+!function(){for(test||test();!ok&&test();ok||test());}()

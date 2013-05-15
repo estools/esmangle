@@ -1,1 +1,1 @@
-(function(){a:{if(c)break a;!function(){a:{if(c)break a;print('HELLO')}}()}}())
+!function(){a:{if(c)break a;!function(){a:{if(c)break a;print('HELLO')}}()}}()

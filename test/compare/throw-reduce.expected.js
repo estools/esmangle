@@ -1,1 +1,1 @@
-(function(){throw cond?a:b}())
+!function(){throw cond?a:b}()

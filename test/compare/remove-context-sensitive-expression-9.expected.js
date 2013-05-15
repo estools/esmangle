@@ -1,1 +1,1 @@
-(function(){while(!(ok&&ok2()))ok3()}())
+!function(){while(!(ok&&ok2()))ok3()}()

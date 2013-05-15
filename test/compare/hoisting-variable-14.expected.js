@@ -1,1 +1,1 @@
-(function(a){for(a in[]);}())
+!function(a){for(a in[]);}()

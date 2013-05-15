@@ -1,1 +1,1 @@
-(function(){throw'test'}())
+!function(){throw'test'}()

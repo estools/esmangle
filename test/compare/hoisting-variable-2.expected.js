@@ -1,1 +1,1 @@
-(function(){arguments[0]=20;var a=300}())
+!function(){arguments[0]=20;var a=300}()

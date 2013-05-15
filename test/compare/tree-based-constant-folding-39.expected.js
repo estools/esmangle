@@ -1,1 +1,1 @@
-(function(){a?-b:-20}())
+!function(){a?-b:-20}()

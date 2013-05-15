@@ -44,6 +44,8 @@ argv = optimist.usage("Usage: $0 file")
     .describe('help', 'show help')
     .boolean('source-map')
     .describe('source-map', 'dump source-map')
+    .boolean('preserve-completion-value')
+    .describe('preserve-completion-value', 'preserve completion values if needed')
     .string('o')
     .alias('o', 'output')
     .describe('o', 'output file')
@@ -69,7 +71,8 @@ function compile(content, filename) {
     tree = esprima.parse(content, { loc: true });
     tree = esmangle.optimize(tree, null, {
         destructive: true,
-        directive: true
+        directive: true,
+        preserveCompletionValue: argv['preserve-completion-value']
     });
     tree = esmangle.mangle(tree, {
         destructive: true

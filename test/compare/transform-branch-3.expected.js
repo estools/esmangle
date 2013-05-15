@@ -1,1 +1,1 @@
-(function(){return cond?void 0:20}())
+!function(){return cond?void 0:20}()

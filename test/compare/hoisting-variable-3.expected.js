@@ -1,1 +1,1 @@
-(function(a){a=300}())
+!function(a){a=300}()

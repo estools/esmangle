@@ -1,1 +1,1 @@
-(function(o){with(obj)o.p=(f(),a())}())
+!function(o){with(obj)o.p=(f(),a())}()

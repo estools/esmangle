@@ -1,1 +1,1 @@
-(function(a){for(;a<10;++a);}())
+!function(a){for(;a<10;++a);}()

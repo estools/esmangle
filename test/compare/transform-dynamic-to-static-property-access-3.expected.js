@@ -1,1 +1,1 @@
-(function(){obj[1/0]=20}())
+!function(){obj[1/0]=20}()

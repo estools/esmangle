@@ -1,1 +1,1 @@
-(function(){a:for(;;)for(;;)break a}())
+!function(){a:for(;;)for(;;)break a}()

@@ -1,1 +1,1 @@
-switch(cond){case 10:(function(){print('ok')}())}
+switch(cond){case 10:!function(){print('ok')}()}

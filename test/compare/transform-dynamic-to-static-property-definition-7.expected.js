@@ -1,1 +1,1 @@
-(function(a){a={Infinity:42}}())
+!function(a){a={Infinity:42}}()

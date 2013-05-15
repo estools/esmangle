@@ -1,1 +1,1 @@
-(function(){cond?t:a}())
+!function(){cond?t:a}()

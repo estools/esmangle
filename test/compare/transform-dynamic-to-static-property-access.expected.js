@@ -1,1 +1,1 @@
-(function(){obj[-2]}())
+!function(){obj[-2]}()

@@ -1,3 +1,8 @@
+/*{
+    "options": {
+        "preserveCompletionValue": false
+    }
+}*/
 (function () {
   // not void context
   // do not optimize

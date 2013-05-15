@@ -1,1 +1,1 @@
-(function(){var a;function b(){a+=10}}())
+!function(){var a;function b(){a+=10}}()

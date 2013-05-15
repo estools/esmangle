@@ -1,1 +1,1 @@
-(function(){function a(){print(arguments)}print(a)}())
+!function(){function a(){print(arguments)}print(a)}()

@@ -1,1 +1,1 @@
-(function(d){d=20,a(),b(),d+c()}())
+!function(d){d=20,a(),b(),d+c()}()

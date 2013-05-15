@@ -1,1 +1,1 @@
-(function(){return cond?10:20}())
+!function(){return cond?10:20}()

@@ -1,1 +1,1 @@
-(function(){for(var a=10 in[]);}())
+!function(){for(var a=10 in[]);}()

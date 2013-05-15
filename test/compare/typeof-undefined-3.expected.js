@@ -1,1 +1,1 @@
-(function(){alert(typeof a==='undefined')}())
+!function(){alert(typeof a==='undefined')}()

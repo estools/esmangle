@@ -1,1 +1,1 @@
-switch(cond){default:(function(){print('ok')}())}
+switch(cond){default:!function(){print('ok')}()}

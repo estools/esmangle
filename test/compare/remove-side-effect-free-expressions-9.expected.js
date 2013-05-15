@@ -1,1 +1,1 @@
-(function(){(0,eval)('')}())
+!function(){(0,eval)('')}()

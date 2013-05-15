@@ -1,1 +1,1 @@
-(function(){obj.NaN=20}())
+!function(){obj.NaN=20}()

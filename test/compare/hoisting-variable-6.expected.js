@@ -1,1 +1,1 @@
-(function(){var a=20;!function(){eval('')}()}())
+!function(){var a=20;!function(){eval('')}()}()

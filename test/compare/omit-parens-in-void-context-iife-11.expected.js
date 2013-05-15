@@ -1,1 +1,1 @@
-for(var i in obj)(function(){print('ok')}())
+for(var i in obj)!function(){print('ok')}()

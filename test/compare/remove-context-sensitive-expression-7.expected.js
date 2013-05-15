@@ -1,1 +1,1 @@
-(function(){ok&&ok2()}())
+!function(){ok&&ok2()}()

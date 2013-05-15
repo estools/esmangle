@@ -1,1 +1,1 @@
-(function(a){a={'-Infinity':20}}())
+!function(a){a={'-Infinity':20}}()

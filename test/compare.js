@@ -106,10 +106,10 @@ function doTest(tree, expected) {
             if (typeof parsed === 'object' && parsed !== null) {
                 pass = parsed.pass ? parsed.pass.map(function (name) {
                     return esmangle.require('pass/' + name);
-                }) : [];
+                }) : defaultPass;
                 post = parsed.post ? parsed.post.map(function (name) {
                     return esmangle.require('post/' + name);
-                }) : [];
+                }) : defaultPost;
                 options = parsed.options ? parsed.options : {};
                 return true;
             }

@@ -1,1 +1,1 @@
-with(cond)(function(){print('ok')}())
+with(cond)!function(){print('ok')}()

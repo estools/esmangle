@@ -1,1 +1,1 @@
-(function(){f(2)}())
+!function(){f(2)}()

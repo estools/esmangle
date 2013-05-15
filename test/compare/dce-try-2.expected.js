@@ -1,1 +1,1 @@
-(function(){try{throw'test'}finally{ok()}}())
+!function(){try{throw'test'}finally{ok()}}()

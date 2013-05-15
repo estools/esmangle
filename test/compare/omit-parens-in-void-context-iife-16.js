@@ -1,3 +1,8 @@
+/*{
+    "options": {
+        "preserveCompletionValue": true
+    }
+}*/
 try {
   // do not optimize it
   (function () {

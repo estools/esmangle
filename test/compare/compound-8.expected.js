@@ -1,1 +1,1 @@
-(function(){var i;with(obj){i}i+=10}())
+!function(){var i;with(obj){i}i+=10}()

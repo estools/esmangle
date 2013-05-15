@@ -1,1 +1,1 @@
-(function(){with(obj)f(),p=20}())
+!function(){with(obj)f(),p=20}()
