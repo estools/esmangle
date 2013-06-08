@@ -1,1 +1,1 @@
-!cond&&ok()
+if(!cond)ok()
