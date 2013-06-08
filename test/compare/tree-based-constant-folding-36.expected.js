@@ -1,1 +1,1 @@
-!function(){a?!0:b!=null}()
+!function(){a||b!=null}()
