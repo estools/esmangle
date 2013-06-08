@@ -81,7 +81,7 @@ function compile(content, filename) {
         format: {
             renumber: true,
             hexadecimal: true,
-            escapeless: true,
+            escapeless: false,
             compact: true,
             semicolons: false,
             parentheses: false

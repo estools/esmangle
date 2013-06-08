@@ -94,11 +94,12 @@ function doOptimize(tree, pass, post, options) {
     }, options));
 }
 
-function doTest(tree, expected) {
-    var pass, post, options, actual;
+function doTest(tree, expected, raw) {
+    var pass, post, options, actual, rawCheck;
     pass = defaultPass;
     post = defaultPost;
     options = {};
+    rawCheck = true;
     tree.comments.some(function (comment) {
         var parsed;
         try {
@@ -111,17 +112,21 @@ function doTest(tree, expected) {
                     return esmangle.require('post/' + name);
                 }) : defaultPost;
                 options = parsed.options ? parsed.options : {};
+                rawCheck = parsed.raw == null ? true : parsed.raw === raw;
                 return true;
             }
         } catch (e) { }
         return false;
     });
+    if (!rawCheck) {
+        return;
+    }
     tree = doOptimize(tree, pass, post, options);
     actual = escodegen.generate(tree, {
         format: {
             renumber: true,
             hexadecimal: true,
-            escapeless: true,
+            escapeless: false,
             compact: true,
             semicolons: false,
             parentheses: false
@@ -150,10 +155,10 @@ describe('compare mangling result', function () {
                     expected = fs.readFileSync(expectedName, 'utf-8').trim();
                     tree = esprima.parse(code, { comment: true });
                     // normal test
-                    doTest(tree, expected);
+                    doTest(tree, expected, false);
                     // raw test
                     tree = esprima.parse(code, { comment: true, raw: true });
-                    doTest(tree, expected);
+                    doTest(tree, expected, true);
                 });
             }
         }
