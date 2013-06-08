@@ -1,3 +1,8 @@
+/*{
+    "options": {
+        "preserveCompletionValue": true
+    }
+}*/
 // reported from issue #60
 void function () {
   var foo;  // this foo should be dropped
