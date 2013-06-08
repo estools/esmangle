@@ -1,1 +1,6 @@
-/*{    "options": {        "preserveCompletionValue": true    }}*/{a: 1}
+/*{
+    "options": {
+        "preserveCompletionValue": true
+    }
+}*/
+{a: 1}
