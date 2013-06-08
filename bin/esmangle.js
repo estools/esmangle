@@ -68,7 +68,7 @@ function output(code) {
 
 function compile(content, filename) {
     var tree;
-    tree = esprima.parse(content, { loc: true });
+    tree = esprima.parse(content, { loc: true, raw: true });
     tree = esmangle.optimize(tree, null, {
         destructive: true,
         directive: true,
