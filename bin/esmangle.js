@@ -34,7 +34,8 @@ var fs = require('fs'),
     esmangle,
     argv,
     post,
-    passes;
+    passes,
+    multipleFilesSpecified;
 
 Error.stackTraceLimit = Infinity;
 
@@ -51,10 +52,13 @@ argv = optimist.usage("Usage: $0 file")
     .describe('o', 'output file')
     .argv;
 
-if (argv.help ||
-    (argv.output && Array.isArray(argv.output) && argv.output.length > 1)) {
+multipleFilesSpecified = (argv.output && Array.isArray(argv.output) && argv.output.length > 1);
+
+if (argv.help || multipleFilesSpecified) {
     optimist.showHelp();
-    console.error('multiple output files are specified');
+    if (multipleFilesSpecified) {
+        console.error('multiple output files are specified');
+    }
     process.exit(1);
 }
 
