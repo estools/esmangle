@@ -37,7 +37,7 @@
     "browserify": "*",
     "grunt": "~0.4.1",
     "grunt-cli": "~0.1.7",
-    "grunt-contrib-jshint": "~0.4.1",
+    "grunt-contrib-jshint": "~0.6.0",
     "grunt-mocha-test": "~0.5.0",
     "grunt-contrib-copy": "~0.4.1",
     "grunt-update-submodules": "~0.2.0",
