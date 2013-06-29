@@ -59,11 +59,11 @@ module.exports = function (grunt) {
             }
         },
         mochaTest: {
-            files: ['test/*.js']
-        },
-        mochaTestConfig: {
             options: {
                 reporter: 'spec'
+            },
+            test: {
+                src: ['test/*.js']
             }
         },
         shell: {
