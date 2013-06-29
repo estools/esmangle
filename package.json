@@ -53,7 +53,10 @@
     }
   ],
   "scripts": {
-    "test": "node_modules/.bin/grunt travis",
-    "build": "node_modules/.bin/grunt build"
+    "test": "grunt travis",
+    "lint": "grunt lint",
+    "regression-test": "grunt test:regression",
+    "unit-test": "grunt test",
+    "build": "grunt build"
   }
 }
