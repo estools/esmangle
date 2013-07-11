@@ -123,14 +123,7 @@ function doTest(tree, expected, raw) {
     }
     tree = doOptimize(tree, pass, post, options);
     actual = escodegen.generate(tree, {
-        format: {
-            renumber: true,
-            hexadecimal: true,
-            escapeless: false,
-            compact: true,
-            semicolons: false,
-            parentheses: false
-        },
+        format: escodegen.FORMAT_MINIFY,
         directive: true
     });
     expect(actual).to.be.equal(expected);

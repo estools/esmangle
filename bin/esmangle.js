@@ -82,14 +82,7 @@ function compile(content, filename) {
         destructive: true
     });
     return escodegen.generate(tree, {
-        format: {
-            renumber: true,
-            hexadecimal: true,
-            escapeless: false,
-            compact: true,
-            semicolons: false,
-            parentheses: false
-        },
+        format: escodegen.FORMAT_MINIFY,
         sourceMap: argv['source-map'] && filename,
         directive: true
     });
