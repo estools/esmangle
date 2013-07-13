@@ -10,5 +10,8 @@ node_modules/
 cover_html/
 coverage/
 
+# Generated
+esmangle.js
+
 npm-debug.log
 .vimrc.local
