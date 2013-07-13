@@ -41,37 +41,37 @@ Error.stackTraceLimit = Infinity;
 existsSync = fs.existsSync || path.existsSync;
 esmangle = require(root);
 defaultPass = [
-    esmangle.require('pass/tree-based-constant-folding'),
-    esmangle.require('pass/hoist-variable-to-arguments'),
-    esmangle.require('pass/transform-dynamic-to-static-property-access'),
-    esmangle.require('pass/transform-dynamic-to-static-property-definition'),
-    esmangle.require('pass/transform-immediate-function-call'),
-    esmangle.require('pass/transform-logical-association'),
-    esmangle.require('pass/reordering-function-declarations'),
-    esmangle.require('pass/remove-unused-label'),
-    esmangle.require('pass/remove-empty-statement'),
-    esmangle.require('pass/remove-wasted-blocks'),
-    esmangle.require('pass/transform-to-compound-assignment'),
-    esmangle.require('pass/transform-to-sequence-expression'),
-    esmangle.require('pass/transform-branch-to-expression'),
-    esmangle.require('pass/transform-typeof-undefined'),
-    esmangle.require('pass/reduce-sequence-expression'),
-    esmangle.require('pass/reduce-branch-jump'),
-    esmangle.require('pass/reduce-multiple-if-statements'),
-    esmangle.require('pass/dead-code-elimination'),
-    esmangle.require('pass/remove-side-effect-free-expressions'),
-    esmangle.require('pass/remove-context-sensitive-expressions'),
-    esmangle.require('pass/concatenate-variable-definition'),
-    esmangle.require('pass/drop-variable-definition'),
-    esmangle.require('pass/remove-unreachable-branch')
+    esmangle.pass.require('pass/tree-based-constant-folding'),
+    esmangle.pass.require('pass/hoist-variable-to-arguments'),
+    esmangle.pass.require('pass/transform-dynamic-to-static-property-access'),
+    esmangle.pass.require('pass/transform-dynamic-to-static-property-definition'),
+    esmangle.pass.require('pass/transform-immediate-function-call'),
+    esmangle.pass.require('pass/transform-logical-association'),
+    esmangle.pass.require('pass/reordering-function-declarations'),
+    esmangle.pass.require('pass/remove-unused-label'),
+    esmangle.pass.require('pass/remove-empty-statement'),
+    esmangle.pass.require('pass/remove-wasted-blocks'),
+    esmangle.pass.require('pass/transform-to-compound-assignment'),
+    esmangle.pass.require('pass/transform-to-sequence-expression'),
+    esmangle.pass.require('pass/transform-branch-to-expression'),
+    esmangle.pass.require('pass/transform-typeof-undefined'),
+    esmangle.pass.require('pass/reduce-sequence-expression'),
+    esmangle.pass.require('pass/reduce-branch-jump'),
+    esmangle.pass.require('pass/reduce-multiple-if-statements'),
+    esmangle.pass.require('pass/dead-code-elimination'),
+    esmangle.pass.require('pass/remove-side-effect-free-expressions'),
+    esmangle.pass.require('pass/remove-context-sensitive-expressions'),
+    esmangle.pass.require('pass/concatenate-variable-definition'),
+    esmangle.pass.require('pass/drop-variable-definition'),
+    esmangle.pass.require('pass/remove-unreachable-branch')
 ];
 
 defaultPost = [
-    esmangle.require('post/transform-static-to-dynamic-property-access'),
-    esmangle.require('post/transform-infinity'),
-    esmangle.require('post/rewrite-boolean'),
-    esmangle.require('post/rewrite-conditional-expression'),
-    esmangle.require('post/omit-parens-in-void-context-iife')
+    esmangle.pass.require('post/transform-static-to-dynamic-property-access'),
+    esmangle.pass.require('post/transform-infinity'),
+    esmangle.pass.require('post/rewrite-boolean'),
+    esmangle.pass.require('post/rewrite-conditional-expression'),
+    esmangle.pass.require('post/omit-parens-in-void-context-iife')
 ];
 
 function extend(target, update) {
@@ -106,10 +106,10 @@ function doTest(tree, expected, raw) {
             parsed = JSON.parse(comment.value.trim());
             if (typeof parsed === 'object' && parsed !== null) {
                 pass = parsed.pass ? parsed.pass.map(function (name) {
-                    return esmangle.require('pass/' + name);
+                    return esmangle.pass.require('pass/' + name);
                 }) : defaultPass;
                 post = parsed.post ? parsed.post.map(function (name) {
-                    return esmangle.require('post/' + name);
+                    return esmangle.pass.require('post/' + name);
                 }) : defaultPost;
                 options = parsed.options ? parsed.options : {};
                 rawCheck = parsed.raw == null ? true : parsed.raw === raw;
