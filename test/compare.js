@@ -63,7 +63,8 @@ defaultPass = [
     esmangle.pass.require('pass/remove-context-sensitive-expressions'),
     esmangle.pass.require('pass/concatenate-variable-definition'),
     esmangle.pass.require('pass/drop-variable-definition'),
-    esmangle.pass.require('pass/remove-unreachable-branch')
+    esmangle.pass.require('pass/remove-unreachable-branch'),
+    esmangle.pass.require('pass/eliminate-duplicate-function-declarations')
 ];
 
 defaultPost = [
