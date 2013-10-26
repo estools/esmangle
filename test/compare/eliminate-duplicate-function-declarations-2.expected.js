@@ -1,1 +1,1 @@
-function a(){console.log('ok1')}function a(){console.log('ok2')}a()
+function a(){console.log('ok2')}a()
