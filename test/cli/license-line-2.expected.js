@@ -1,0 +1,2 @@
+// @license MIT
+function test(){}
