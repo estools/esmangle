@@ -47,6 +47,8 @@ argv = optimist.usage("Usage: $0 file")
     .describe('source-map', 'dump source-map')
     .boolean('preserve-completion-value')
     .describe('preserve-completion-value', 'preserve completion values if needed')
+    .boolean('preserve-license-comment')
+    .describe('preserve-license-comment', 'preserve comments with @license')
     .string('o')
     .alias('o', 'output')
     .describe('o', 'output file')
@@ -59,7 +61,12 @@ if (argv.help || multipleFilesSpecified) {
     if (multipleFilesSpecified) {
         console.error('multiple output files are specified');
     }
-    process.exit(1);
+
+    if (argv.help) {
+        process.exit(0);
+    } else {
+        process.exit(1);
+    }
 }
 
 function output(code) {
@@ -71,8 +78,22 @@ function output(code) {
 }
 
 function compile(content, filename) {
-    var tree;
-    tree = esprima.parse(content, { loc: true, raw: true });
+    var tree, licenses, generated, header, preserveLicenseComment;
+
+    preserveLicenseComment = argv['preserve-license-comment'];
+
+    tree = esprima.parse(content, {
+        loc: true,
+        raw: true,
+        comment: preserveLicenseComment
+    });
+
+    if (preserveLicenseComment) {
+        licenses = tree.comments.filter(function (comment) {
+            return /@license/gi.test(comment.value);
+        });
+    }
+
     tree = esmangle.optimize(tree, null, {
         destructive: true,
         directive: true,
@@ -81,11 +102,26 @@ function compile(content, filename) {
     tree = esmangle.mangle(tree, {
         destructive: true
     });
-    return escodegen.generate(tree, {
+
+    generated = escodegen.generate(tree, {
         format: escodegen.FORMAT_MINIFY,
         sourceMap: argv['source-map'] && filename,
         directive: true
     });
+
+    if (preserveLicenseComment) {
+        header = licenses.reduce(function (result, comment) {
+            if (comment.type === 'Block') {
+                return result + '/*' + comment.value + '*/\n';
+            } else if (comment.type === 'Line') {
+                return result + '//' + comment.value + '\n';
+            }
+        }, '');
+    } else {
+        header = '';
+    }
+
+    return header + generated;
 }
 
 if (argv._.length === 0) {
