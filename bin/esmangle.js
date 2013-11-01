@@ -30,6 +30,7 @@ var fs = require('fs'),
     root = path.join(path.dirname(fs.realpathSync(__filename)), '..'),
     esprima = require('esprima'),
     escodegen = require('escodegen'),
+    estraverse = require('estraverse'),
     optimist = require('optimist'),
     esmangle,
     argv,
@@ -48,7 +49,7 @@ argv = optimist.usage("Usage: $0 file")
     .boolean('preserve-completion-value')
     .describe('preserve-completion-value', 'preserve completion values if needed')
     .boolean('preserve-license-comment')
-    .describe('preserve-license-comment', 'preserve comments with @license')
+    .describe('preserve-license-comment', 'preserve comments with @license, @preserve and @cc_on')
     .string('o')
     .alias('o', 'output')
     .describe('o', 'output file')
@@ -85,13 +86,16 @@ function compile(content, filename) {
     tree = esprima.parse(content, {
         loc: true,
         raw: true,
+        tokens: true,
         comment: preserveLicenseComment
     });
 
     if (preserveLicenseComment) {
         licenses = tree.comments.filter(function (comment) {
-            return /@license/gi.test(comment.value);
+            return /@(?:license|preserve|cc_on)/i.test(comment.value);
         });
+        // Attach comments to the tree.
+        estraverse.attachComments(tree, licenses, tree.tokens);
     }
 
     tree = esmangle.optimize(tree, null, {
@@ -103,25 +107,12 @@ function compile(content, filename) {
         destructive: true
     });
 
-    generated = escodegen.generate(tree, {
+    return escodegen.generate(tree, {
         format: escodegen.FORMAT_MINIFY,
         sourceMap: argv['source-map'] && filename,
-        directive: true
+        directive: true,
+        comment: preserveLicenseComment
     });
-
-    if (preserveLicenseComment) {
-        header = licenses.reduce(function (result, comment) {
-            if (comment.type === 'Block') {
-                return result + '/*' + comment.value + '*/\n';
-            } else if (comment.type === 'Line') {
-                return result + '//' + comment.value + '\n';
-            }
-        }, '');
-    } else {
-        header = '';
-    }
-
-    return header + generated;
 }
 
 if (argv._.length === 0) {
