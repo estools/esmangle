@@ -1,4 +1,0 @@
-/*
-     * @license MIT
-     */
-function test(){}

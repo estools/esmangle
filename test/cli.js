@@ -69,52 +69,104 @@ function file(name) {
 }
 
 describe('cli', function () {
-    it('block comment license works', function (done) {
-        spawn(esmangle, [
-            '--preserve-license-comment',
-            file('license-block.js')
-        ]).then(function (result) {
-            var expected;
-            expected = fs.readFileSync(file('license-block.expected.js'), 'utf-8');
-            expect(result).to.be.equal(expected);
-            done();
-        }).catch(done);
+    describe('propagate-license-comment-to-header', function () {
+        it('block comment license works', function (done) {
+            spawn(esmangle, [
+                '--propagate-license-comment-to-header',
+                file('propagate-license-comment-to-header/license-block.js')
+            ]).then(function (result) {
+                var expected;
+                expected = fs.readFileSync(file('propagate-license-comment-to-header/license-block.expected.js'), 'utf-8');
+                expect(result).to.be.equal(expected);
+                done();
+            }).catch(done);
+        });
+
+        it('block comment license inner function works', function (done) {
+            spawn(esmangle, [
+                '--propagate-license-comment-to-header',
+                file('propagate-license-comment-to-header/license-block-2.js')
+            ]).then(function (result) {
+                var expected;
+                expected = fs.readFileSync(file('propagate-license-comment-to-header/license-block-2.expected.js'), 'utf-8');
+                expect(result).to.be.equal(expected);
+                done();
+            }).catch(done);
+        });
+
+        it('line comment license works', function (done) {
+            spawn(esmangle, [
+                '--propagate-license-comment-to-header',
+                file('propagate-license-comment-to-header/license-line.js')
+            ]).then(function (result) {
+                var expected;
+                expected = fs.readFileSync(file('propagate-license-comment-to-header/license-line.expected.js'), 'utf-8');
+                expect(result).to.be.equal(expected);
+                done();
+            }).catch(done);
+        });
+
+        it('line comment license inner function works', function (done) {
+            spawn(esmangle, [
+                '--propagate-license-comment-to-header',
+                file('propagate-license-comment-to-header/license-line-2.js')
+            ]).then(function (result) {
+                var expected;
+                expected = fs.readFileSync(file('propagate-license-comment-to-header/license-line-2.expected.js'), 'utf-8');
+                expect(result).to.be.equal(expected);
+                done();
+            }).catch(done);
+        });
     });
 
-    it('block comment license inner function works', function (done) {
-        spawn(esmangle, [
-            '--preserve-license-comment',
-            file('license-block-2.js')
-        ]).then(function (result) {
-            var expected;
-            expected = fs.readFileSync(file('license-block-2.expected.js'), 'utf-8');
-            expect(result).to.be.equal(expected);
-            done();
-        }).catch(done);
-    });
+    describe('preserve-license-comment', function () {
+        it('block comment license works', function (done) {
+            spawn(esmangle, [
+                '--preserve-license-comment',
+                file('preserve-license-comment/license-block.js')
+            ]).then(function (result) {
+                var expected;
+                expected = fs.readFileSync(file('preserve-license-comment/license-block.expected.js'), 'utf-8');
+                expect(result).to.be.equal(expected);
+                done();
+            }).catch(done);
+        });
 
-    it('line comment license works', function (done) {
-        spawn(esmangle, [
-            '--preserve-license-comment',
-            file('license-line.js')
-        ]).then(function (result) {
-            var expected;
-            expected = fs.readFileSync(file('license-line.expected.js'), 'utf-8');
-            expect(result).to.be.equal(expected);
-            done();
-        }).catch(done);
-    });
+        it('block comment license inner function works', function (done) {
+            spawn(esmangle, [
+                '--preserve-license-comment',
+                file('preserve-license-comment/license-block-2.js')
+            ]).then(function (result) {
+                var expected;
+                expected = fs.readFileSync(file('preserve-license-comment/license-block-2.expected.js'), 'utf-8');
+                expect(result).to.be.equal(expected);
+                done();
+            }).catch(done);
+        });
 
-    it('line comment license inner function works', function (done) {
-        spawn(esmangle, [
-            '--preserve-license-comment',
-            file('license-line-2.js')
-        ]).then(function (result) {
-            var expected;
-            expected = fs.readFileSync(file('license-line-2.expected.js'), 'utf-8');
-            expect(result).to.be.equal(expected);
-            done();
-        }).catch(done);
+        it('line comment license works', function (done) {
+            spawn(esmangle, [
+                '--preserve-license-comment',
+                file('preserve-license-comment/license-line.js')
+            ]).then(function (result) {
+                var expected;
+                expected = fs.readFileSync(file('preserve-license-comment/license-line.expected.js'), 'utf-8');
+                expect(result).to.be.equal(expected);
+                done();
+            }).catch(done);
+        });
+
+        it('line comment license inner function works', function (done) {
+            spawn(esmangle, [
+                '--preserve-license-comment',
+                file('preserve-license-comment/license-line-2.js')
+            ]).then(function (result) {
+                var expected;
+                expected = fs.readFileSync(file('preserve-license-comment/license-line-2.expected.js'), 'utf-8');
+                expect(result).to.be.equal(expected);
+                done();
+            }).catch(done);
+        });
     });
 });
 
