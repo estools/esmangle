@@ -30,7 +30,7 @@
     "escodegen": "~ 0.0.28",
     "estraverse": "~ 1.4.0",
     "source-map": "~ 0.1.8",
-    "esshorten": "~ 0.0.2",
+    "esshorten": "~ 1.0.0",
     "esutils": "~ 1.0.0",
     "optimist": "*"
   },
