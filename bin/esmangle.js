@@ -104,7 +104,7 @@ function compile(content, filename) {
 
     if (preserveLicenseComment || propagateLicenseComment) {
         licenses = tree.comments.filter(function (comment) {
-            return /@(?:license|preserve)/i.test(comment.value);
+            return /@(?:license|preserve)|copyright/i.test(comment.value);
         });
     }
 
