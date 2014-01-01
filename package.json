@@ -27,26 +27,26 @@
   "dependencies": {
     "esprima": "~ 1.0.4",
     "escope": "~ 1.0.0",
-    "escodegen": "~ 0.0.28",
-    "estraverse": "~ 1.4.0",
-    "source-map": "~ 0.1.8",
+    "escodegen": "~1.0.1",
+    "estraverse": "~1.5.0",
+    "source-map": "~ 0.1.13",
     "esshorten": "~ 1.0.0",
     "esutils": "~ 1.0.0",
     "optimist": "*"
   },
   "devDependencies": {
     "chai": "*",
-    "commonjs-everywhere": "0.8.x",
-    "grunt": "~0.4.1",
-    "grunt-cli": "~0.1.7",
-    "grunt-contrib-jshint": "~0.6.0",
-    "grunt-mocha-test": "~0.5.0",
-    "grunt-contrib-copy": "~0.4.1",
-    "grunt-update-submodules": "~0.2.0",
-    "grunt-contrib-clean": "~0.4.1",
-    "grunt-shell": "~0.2.2",
-    "async": "~0.2.8",
-    "q": "~0.9.3"
+    "grunt-contrib-jshint": "~0.8.0",
+    "grunt-mocha-test": "~0.8.1",
+    "grunt-contrib-copy": "~0.5.0",
+    "grunt-contrib-clean": "~0.5.0",
+    "async": "~0.2.9",
+    "q": "~0.9.7",
+    "commonjs-everywhere": "~0.9.4",
+    "grunt-cli": "~0.1.11",
+    "grunt": "~0.4.2",
+    "grunt-update-submodules": "~0.2.1",
+    "grunt-shell": "~0.6.1"
   },
   "licenses": [
     {
