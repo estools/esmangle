@@ -1,1 +1,1 @@
-var a=(f(),void 0)
+var a=void f()

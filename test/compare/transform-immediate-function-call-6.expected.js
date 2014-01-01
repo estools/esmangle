@@ -1,1 +1,1 @@
-f(),void 0
+void f()
