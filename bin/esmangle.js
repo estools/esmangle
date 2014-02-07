@@ -24,138 +24,157 @@
 */
 
 /*jslint node:true */
+(function () {
+    'use strict';
 
-var fs = require('fs'),
-    path = require('path'),
-    root = path.join(path.dirname(fs.realpathSync(__filename)), '..'),
-    esprima = require('esprima'),
-    escodegen = require('escodegen'),
-    estraverse = require('estraverse'),
-    optimist = require('optimist'),
-    esmangle,
-    common,
-    argv,
-    post,
-    passes,
-    multipleFilesSpecified;
+    var fs = require('fs'),
+        path = require('path'),
+        root = path.join(path.dirname(fs.realpathSync(__filename)), '..'),
+        esprima = require('esprima'),
+        escodegen = require('escodegen'),
+        estraverse = require('estraverse'),
+        optionator,
+        esmangle,
+        common,
+        argv;
 
-Error.stackTraceLimit = Infinity;
+    Error.stackTraceLimit = Infinity;
 
-esmangle = require(root);
-common = require(path.join(root, 'lib', 'common'));
+    esmangle = require(root);
+    common = require(path.join(root, 'lib', 'common'));
 
-argv = optimist.usage("Usage: $0 file")
-    .describe('help', 'show help')
-    .boolean('source-map')
-    .describe('source-map', 'dump source-map')
-    .boolean('preserve-completion-value')
-    .describe('preserve-completion-value', 'preserve completion values if needed')
-    .boolean('preserve-license-comment')
-    .describe('preserve-license-comment', 'preserve comments with @license, @preserve. But these comment may be lost if attached node is transformed or a comment isn\'t attached to any statement.')
-    .boolean('propagate-license-comment-to-header')
-    .describe('propagate-license-comment-to-header', 'preserve comments with @license, @preserve. But these comment may be propagated to the script header.')
-    .string('o')
-    .alias('o', 'output')
-    .describe('o', 'output file')
-    .wrap(80)
-    .argv;
+    optionator = require('optionator')({
+        prepend: 'Usage: esmangle file',
+        append: 'Version ' + esmangle.version,
+        helpStyle: {
+            maxPadFactor: 2
+        },
+        options: [
+            {
+                option: 'help',
+                alias: 'h',
+                type: 'Boolean',
+                description: 'show help',
+                restPositional: true
+            },
+            {
+                option: 'source-map',
+                type: 'Boolean',
+                description: 'dump source-map'
+            },
+            {
+                option: 'preserve-completion-value',
+                type: 'Boolean',
+                description: 'preserve completion values if needed'
+            },
+            {
+                option: 'preserve-license-comment',
+                type: 'Boolean',
+                description: 'preserve comments with @license, @preserve. But these comment may be lost if attached node is transformed or a comment isn\'t attached to any statement.'
+            },
+            {
+                option: 'propagate-license-comment-to-header',
+                type: 'Boolean',
+                description: 'preserve comments with @license, @preserve. But these comment may be propagated to the script header.'
+            },
+            {
+                option: 'output',
+                alias: 'o',
+                type: 'String',
+                description: 'output file'
+            }
+        ]
+    });
 
-multipleFilesSpecified = (argv.output && Array.isArray(argv.output) && argv.output.length > 1);
-
-if (argv.help || multipleFilesSpecified) {
-    optimist.showHelp();
-    if (multipleFilesSpecified) {
-        console.error('multiple output files are specified');
-    }
+    argv = optionator.parse(process.argv);
 
     if (argv.help) {
+        console.error(optionator.generateHelp());
         process.exit(0);
-    } else {
+    }
+
+    if (argv.preserveLicenseComment && argv.propagateLicenseCommentToHeader) {
+        console.error('cannot specify --preserve-license-comment and --propagate-license-comment-to-header both');
         process.exit(1);
     }
-}
 
-if (argv['preserve-license-comment'] && argv['propagate-license-comment-to-header']) {
-    console.error('cannot specify --preserve-license-comment and --propagate-license-comment-to-header both');
-    process.exit(1);
-}
+    function output(code) {
+        if (argv.output) {
+            fs.writeFileSync(argv.output, code);
+        } else {
+            console.log(code);
+        }
+    }
 
-function output(code) {
-    if (argv.output) {
-        fs.writeFileSync(argv.output, code);
+    function compile(content, filename) {
+        var tree, licenses, formatOption, preserveLicenseComment, propagateLicenseComment;
+
+        preserveLicenseComment = argv.preserveLicenseComment;
+        propagateLicenseComment = argv.propagateLicenseCommentToHeader;
+
+        tree = esprima.parse(content, {
+            loc: true,
+            range: true,
+            raw: true,
+            tokens: true,
+            comment: preserveLicenseComment || propagateLicenseComment
+        });
+
+        if (preserveLicenseComment || propagateLicenseComment) {
+            licenses = tree.comments.filter(function (comment) {
+                return /@(?:license|preserve)|copyright/i.test(comment.value);
+            });
+        }
+
+        if (preserveLicenseComment) {
+            // Attach comments to the tree.
+            estraverse.attachComments(tree, licenses, tree.tokens);
+        }
+
+        tree = esmangle.optimize(tree, null, {
+            destructive: true,
+            directive: true,
+            preserveCompletionValue: argv.preserveCompletionValue
+        });
+        tree = esmangle.mangle(tree, {
+            destructive: true,
+            distinguishFunctionExpressionScope: false
+        });
+
+        if (propagateLicenseComment) {
+            tree.leadingComments = licenses;
+        }
+
+        formatOption = common.deepCopy(escodegen.FORMAT_MINIFY);
+        formatOption.indent.adjustMultilineComment = true;
+
+        return escodegen.generate(tree, {
+            format: formatOption,
+            sourceMap: argv.sourceMap && filename,
+            directive: true,
+            comment: preserveLicenseComment || propagateLicenseComment
+        });
+    }
+
+    if (argv._.length === 0) {
+        // no file is specified, so use stdin as input
+        (function () {
+            var code = '';
+            process.stdin.on('data', function (data) {
+                code += data;
+            });
+            process.stdin.on('end', function (err) {
+                output(compile(code, 'stdin'));
+            });
+            process.stdin.resume();
+        }());
     } else {
-        console.log(code);
-    }
-}
-
-function compile(content, filename) {
-    var tree, licenses, generated, header, preserveLicenseComment, propagateLicenseComment;
-
-    preserveLicenseComment = argv['preserve-license-comment'];
-    propagateLicenseComment = argv['propagate-license-comment-to-header'];
-
-    tree = esprima.parse(content, {
-        loc: true,
-        range: true,
-        raw: true,
-        tokens: true,
-        comment: preserveLicenseComment || propagateLicenseComment
-    });
-
-    if (preserveLicenseComment || propagateLicenseComment) {
-        licenses = tree.comments.filter(function (comment) {
-            return /@(?:license|preserve)|copyright/i.test(comment.value);
+        argv._.forEach(function (filename) {
+            var content, result;
+            content = fs.readFileSync(filename, 'utf-8');
+            result = compile(content, filename);
+            output(result);
         });
     }
-
-    if (preserveLicenseComment) {
-        // Attach comments to the tree.
-        estraverse.attachComments(tree, licenses, tree.tokens);
-    }
-
-    tree = esmangle.optimize(tree, null, {
-        destructive: true,
-        directive: true,
-        preserveCompletionValue: argv['preserve-completion-value']
-    });
-    tree = esmangle.mangle(tree, {
-        destructive: true,
-        distinguishFunctionExpressionScope: false
-    });
-
-    if (propagateLicenseComment) {
-        tree.leadingComments = licenses;
-    }
-
-    formatOption = common.deepCopy(escodegen.FORMAT_MINIFY);
-    formatOption.indent.adjustMultilineComment = true;
-
-    return escodegen.generate(tree, {
-        format: formatOption,
-        sourceMap: argv['source-map'] && filename,
-        directive: true,
-        comment: preserveLicenseComment || propagateLicenseComment
-    });
-}
-
-if (argv._.length === 0) {
-    // no file is specified, so use stdin as input
-    (function () {
-        var code = '';
-        process.stdin.on('data', function (data) {
-            code += data;
-        });
-        process.stdin.on('end', function (err) {
-            output(compile(code, 'stdin'));
-        });
-        process.stdin.resume();
-    }());
-} else {
-    argv._.forEach(function (filename) {
-        var content, result;
-        content = fs.readFileSync(filename, 'utf-8');
-        result = compile(content, filename);
-        output(result);
-    });
-}
+}());
 /* vim: set sw=4 ts=4 et tw=80 : */
