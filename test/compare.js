@@ -91,7 +91,8 @@ function doOptimize(tree, pass, post, options) {
         directive: true
     }, options));
     return esmangle.mangle(tree, extend({
-        destructive: true
+        destructive: true,
+        distinguishFunctionExpressionScope: false
     }, options));
 }
 

@@ -25,14 +25,14 @@
     "url": "http://github.com/Constellation/esmangle.git"
   },
   "dependencies": {
-    "esprima": "~ 1.0.4",
-    "escope": "~ 1.0.0",
-    "escodegen": "~1.0.1",
-    "estraverse": "~1.5.0",
     "source-map": "~ 0.1.13",
-    "esshorten": "~ 1.0.0",
     "esutils": "~ 1.0.0",
-    "optimist": "*"
+    "optimist": "*",
+    "esshorten": "~1.1.0",
+    "estraverse": "~1.5.0",
+    "escope": "~1.0.1",
+    "escodegen": "~1.1.0",
+    "esprima": "~1.0.4"
   },
   "devDependencies": {
     "chai": "*",

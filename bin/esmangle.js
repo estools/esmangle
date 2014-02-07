@@ -119,7 +119,8 @@ function compile(content, filename) {
         preserveCompletionValue: argv['preserve-completion-value']
     });
     tree = esmangle.mangle(tree, {
-        destructive: true
+        destructive: true,
+        distinguishFunctionExpressionScope: false
     });
 
     if (propagateLicenseComment) {
