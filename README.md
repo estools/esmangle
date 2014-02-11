@@ -1,7 +1,7 @@
+# esmangle [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-url]][daviddm-image]
+
 esmangle ([esmangle](http://github.com/Constellation/esmangle)) is
 mangler / minifier for [Parser API](https://developer.mozilla.org/en/SpiderMonkey/Parser_API) AST.
-
-[![Build Status](https://secure.travis-ci.org/Constellation/esmangle.png)](http://travis-ci.org/Constellation/esmangle) [![Build Status](https://drone.io/github.com/Constellation/esmangle/status.png)](https://drone.io/github.com/Constellation/esmangle/latest)
 
 ### Install
 
@@ -80,3 +80,15 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+[npm-url]: https://npmjs.org/package/esmangle
+[npm-image]: https://badge.fury.io/js/esmangle.png
+[travis-url]: https://travis-ci.org/Constellation/esmangle
+[travis-image]: https://travis-ci.org/Constellation/esmangle.png?branch=master
+[coveralls-url]: https://coveralls.io/r/Constellation/esmangle
+[coveralls-image]: https://coveralls.io/repos/Constellation/esmangle/badge.png
+[depstat-url]: https://david-dm.org/Constellation/esmangle
+[depstat-image]: https://david-dm.org/Constellation/esmangle.png
+[daviddm-url]: https://david-dm.org/Constellation/esmangle.png?theme=shields.io
+[daviddm-image]: https://david-dm.org/Constellation/esmangle
