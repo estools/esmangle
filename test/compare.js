@@ -27,6 +27,7 @@
 var fs = require('fs'),
     path = require('path'),
     root = path.join(path.dirname(fs.realpathSync(__filename)), '..'),
+    clone = require('clone'),
     esprima = require('esprima'),
     escodegen = require('escodegen'),
     esmangle,
@@ -97,7 +98,7 @@ function doOptimize(tree, pass, post, options) {
 }
 
 function doTest(tree, expected, raw) {
-    var pass, post, options, actual, rawCheck;
+    var pass, post, options, actual, rawCheck, formatOptions;
     pass = defaultPass;
     post = defaultPost;
     options = {};
@@ -124,9 +125,12 @@ function doTest(tree, expected, raw) {
         return;
     }
     tree = doOptimize(tree, pass, post, options);
+    formatOptions = clone(escodegen.FORMAT_MINIFY);
+    formatOptions.escapeless = false;
     actual = escodegen.generate(tree, {
-        format: escodegen.FORMAT_MINIFY,
-        directive: true
+        format: formatOptions,
+        directive: true,
+        raw: raw
     });
     expect(actual).to.be.equal(expected);
 }
