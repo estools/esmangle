@@ -75,7 +75,7 @@
             {
                 option: 'non-legacy',
                 type: 'Boolean',
-                description: 'Drop legacy (<= IE7) browser support.'
+                description: 'Drop legacy (<= IE8) browser support.'
             },
             {
                 option: 'propagate-license-comment-to-header',
