@@ -4,5 +4,5 @@
     }
 }*/
 (function () {
-    alert(typeof a === 'undefined');
+    alert(typeof a === 'symbol');
 }());

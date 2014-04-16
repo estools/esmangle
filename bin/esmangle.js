@@ -73,6 +73,11 @@
                 description: 'preserve comments with @license, @preserve. But these comment may be lost if attached node is transformed or a comment isn\'t attached to any statement.'
             },
             {
+                option: 'non-legacy',
+                type: 'Boolean',
+                description: 'Drop legacy (<= IE7) browser support.'
+            },
+            {
                 option: 'propagate-license-comment-to-header',
                 type: 'Boolean',
                 description: 'preserve comments with @license, @preserve. But these comment may be propagated to the script header.'
@@ -134,7 +139,8 @@
         tree = esmangle.optimize(tree, null, {
             destructive: true,
             directive: true,
-            preserveCompletionValue: argv.preserveCompletionValue
+            preserveCompletionValue: argv.preserveCompletionValue,
+            legacy: !argv.nonLegacy
         });
         tree = esmangle.mangle(tree, {
             destructive: true,

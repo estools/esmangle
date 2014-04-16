@@ -1,6 +1,6 @@
 /*{
     "options": {
-        "legacy": true
+        "legacy": false
     }
 }*/
 (function () {
