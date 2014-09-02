@@ -1,1 +1,1 @@
-var obj={'arguments':10,'eval':20}
+obj={'arguments':10,'eval':20}

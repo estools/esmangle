@@ -1,1 +1,1 @@
-var obj={delete:10}
+obj={delete:10}

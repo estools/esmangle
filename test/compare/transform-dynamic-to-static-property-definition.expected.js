@@ -1,1 +1,1 @@
-var obj={test:10}
+obj={test:10}

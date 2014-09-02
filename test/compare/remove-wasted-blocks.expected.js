@@ -1,1 +1,1 @@
-var i=20;ok(),ok(),ok()
+i=20,ok(),ok(),ok()

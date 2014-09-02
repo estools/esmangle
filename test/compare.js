@@ -66,7 +66,8 @@ defaultPass = [
     esmangle.pass.require('pass/drop-variable-definition'),
     esmangle.pass.require('pass/remove-unreachable-branch'),
     esmangle.pass.require('pass/eliminate-duplicate-function-declarations'),
-    esmangle.pass.require('pass/typeof-prefix-comparison')
+    esmangle.pass.require('pass/typeof-prefix-comparison'),
+    esmangle.pass.require('pass/top-level-variable-declaration-to-assignment')
 ];
 
 defaultPost = [

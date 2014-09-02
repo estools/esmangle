@@ -87,6 +87,12 @@
                 alias: 'o',
                 type: 'String',
                 description: 'output file'
+            },
+            {
+                option: 'top-level',
+                type: 'String',
+                default: 'global',
+                description: 'top-level program is (global|function)'
             }
         ]
     });
@@ -140,7 +146,8 @@
             destructive: true,
             directive: true,
             preserveCompletionValue: argv.preserveCompletionValue,
-            legacy: !argv.nonLegacy
+            legacy: !argv.nonLegacy,
+            topLevel: argv.topLevel
         });
         tree = esmangle.mangle(tree, {
             destructive: true,
