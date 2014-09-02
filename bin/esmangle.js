@@ -54,23 +54,23 @@
                 option: 'help',
                 alias: 'h',
                 type: 'Boolean',
-                description: 'show help',
+                description: 'Show help.',
                 restPositional: true
             },
             {
                 option: 'source-map',
                 type: 'Boolean',
-                description: 'dump source-map'
+                description: 'Dump source-map.'
             },
             {
                 option: 'preserve-completion-value',
                 type: 'Boolean',
-                description: 'preserve completion values if needed'
+                description: 'Preserve completion values if needed.'
             },
             {
                 option: 'preserve-license-comment',
                 type: 'Boolean',
-                description: 'preserve comments with @license, @preserve. But these comment may be lost if attached node is transformed or a comment isn\'t attached to any statement.'
+                description: 'Preserve comments with @license, @preserve. But these comment may be lost if attached node is transformed or a comment isn\'t attached to any statement.'
             },
             {
                 option: 'non-legacy',
@@ -80,19 +80,25 @@
             {
                 option: 'propagate-license-comment-to-header',
                 type: 'Boolean',
-                description: 'preserve comments with @license, @preserve. But these comment may be propagated to the script header.'
+                description: 'Preserve comments with @license, @preserve. But these comment may be propagated to the script header.'
             },
             {
                 option: 'output',
                 alias: 'o',
                 type: 'String',
-                description: 'output file'
+                description: 'Output file.'
             },
             {
-                option: 'top-level',
+                option: 'top-level-context',
                 type: 'String',
                 default: 'global',
-                description: 'top-level program is (global|function)'
+                description: 'Top-level-context of this program is (global|function|module).'
+            },
+            {
+                option: 'in-strict-code',
+                type: 'Boolean',
+                default: false,
+                description: 'Whether the whole program is stric code or not.'
             }
         ]
     });
@@ -147,7 +153,8 @@
             directive: true,
             preserveCompletionValue: argv.preserveCompletionValue,
             legacy: !argv.nonLegacy,
-            topLevel: argv.topLevel
+            topLevelContext: argv.topLevelContext,
+            inStrictCode: argv.inStrictCode
         });
         tree = esmangle.mangle(tree, {
             destructive: true,
