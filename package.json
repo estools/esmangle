@@ -1,7 +1,7 @@
 {
   "name": "esmangle",
   "description": "ECMAScript code mangler / minifier",
-  "homepage": "http://github.com/Constellation/esmangle.html",
+  "homepage": "http://github.com/estools/esmangle.html",
   "main": "lib/esmangle.js",
   "bin": {
     "esmangle": "./bin/esmangle.js"
@@ -22,7 +22,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "http://github.com/Constellation/esmangle.git"
+    "url": "http://github.com/estools/esmangle.git"
   },
   "dependencies": {
     "esutils": "~ 1.1.4",
@@ -53,7 +53,7 @@
   "licenses": [
     {
       "type": "BSD",
-      "url": "http://github.com/Constellation/esmangle/raw/master/LICENSE.BSD"
+      "url": "http://github.com/estools/esmangle/raw/master/LICENSE.BSD"
     }
   ],
   "scripts": {
