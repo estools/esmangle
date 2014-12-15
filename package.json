@@ -25,7 +25,7 @@
     "url": "http://github.com/estools/esmangle.git"
   },
   "dependencies": {
-    "escodegen": "~1.4.1",
+    "escodegen": "~1.4.2",
     "escope": "~2.0.0",
     "esprima": "~1.2.2",
     "esshorten": "~1.1.0",
