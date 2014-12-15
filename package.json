@@ -28,7 +28,7 @@
     "esutils": "~ 1.1.4",
     "esshorten": "~1.1.0",
     "estraverse": "~1.7.1",
-    "escope": "~1.0.1",
+    "escope": "~2.0.0",
     "source-map": "~0.1.40",
     "escodegen": "~1.4.1",
     "optionator": "~0.4.0",
