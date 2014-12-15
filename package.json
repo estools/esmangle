@@ -31,6 +31,7 @@
     "esshorten": "~1.1.0",
     "estraverse": "~1.9.0",
     "esutils": "~1.1.6",
+    "isarray": "0.0.1",
     "optionator": "~0.4.0",
     "source-map": "~0.1.40"
   },
