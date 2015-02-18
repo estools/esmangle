@@ -33,6 +33,7 @@
         esprima = require('esprima'),
         escodegen = require('escodegen'),
         estraverse = require('estraverse'),
+        esutils = require('esutils'),
         optionator,
         esmangle,
         common,
@@ -123,8 +124,76 @@
         }
     }
 
+    function CommentBlock(comment) {
+        this.comments = [comment]
+    }
+
+    CommentBlock.prototype.append = function (comment) {
+        this.comments.push(comment);
+    };
+
+    CommentBlock.prototype.isLicense = function () {
+        return this.comments.some(function (comment) {
+            return /@(?:license|preserve)|copyright/i.test(comment.value);
+        });
+    };
+
+    function concatSingleLineComments(source, comments) {
+        function CommentBuilder(source) {
+            this.source = source;
+            this.current = null;
+            this.result = [];
+        }
+
+        CommentBuilder.prototype.append = function (comment) {
+            var i, iz, code;
+
+            if (comment.type !== 'Line') {
+                this.finishCurrent();
+                this.result.push(new CommentBlock(comment));
+                return this;
+            }
+
+            if (!this.current) {
+                this.current = new CommentBlock(comment);
+                return this;
+            }
+
+            // Both comment and this.current are single line comments.
+            for (i = this.current.comments[this.current.comments.length - 1].range[1], iz = comment.range[0]; i < iz; ++i) {
+                code = source.charCodeAt(i);
+                if (!esutils.code.isLineTerminator(code) && !esutils.code.isWhiteSpace(code)) {
+                    // Not contiguous.
+                    this.finishCurrent();
+                    this.current = new CommentBlock(comment);
+                    return this;
+                }
+            }
+
+            this.current.append(comment);
+
+            return this;
+        };
+
+        CommentBuilder.prototype.finishCurrent = function (comment) {
+            if (this.current) {
+                this.result.push(this.current);
+                this.current = null;
+            }
+        };
+
+        CommentBuilder.prototype.build = function () {
+            this.finishCurrent();
+            return this.result;
+        };
+
+        return comments.reduce(function (builder, comment) {
+            return builder.append(comment);
+        }, new CommentBuilder()).build();
+    }
+
     function compile(content, filename) {
-        var tree, licenses, formatOption, preserveLicenseComment, propagateLicenseComment;
+        var tree, licenses, comments, formatOption, preserveLicenseComment, propagateLicenseComment;
 
         preserveLicenseComment = argv.preserveLicenseComment;
         propagateLicenseComment = argv.propagateLicenseCommentToHeader;
@@ -137,10 +206,15 @@
             comment: preserveLicenseComment || propagateLicenseComment
         });
 
+        comments = concatSingleLineComments(content, tree.comments);
+
         if (preserveLicenseComment || propagateLicenseComment) {
-            licenses = tree.comments.filter(function (comment) {
-                return /@(?:license|preserve)|copyright/i.test(comment.value);
-            });
+            licenses = comments.reduce(function (results, commentBlock) {
+                if (!commentBlock.isLicense()) {
+                    return results;
+                }
+                return results.concat(commentBlock.comments);
+            }, []);
         }
 
         if (preserveLicenseComment) {

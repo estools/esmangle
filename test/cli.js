@@ -117,6 +117,30 @@ describe('cli', function () {
                 done();
             }).catch(done);
         });
+
+        it('single line comment blocks are concatnated', function (done) {
+            spawn(esmangle, [
+                '--propagate-license-comment-to-header',
+                file('propagate-license-comment-to-header/single-line-comment.js')
+            ]).then(function (result) {
+                var expected;
+                expected = fs.readFileSync(file('propagate-license-comment-to-header/single-line-comment.expected.js'), 'utf-8');
+                expect(result).to.be.equal(expected);
+                done();
+            }).catch(done);
+        });
+
+        it('single line comment blocks are concatnated and propagated', function (done) {
+            spawn(esmangle, [
+                '--propagate-license-comment-to-header',
+                file('propagate-license-comment-to-header/separate-single-line-comment.js')
+            ]).then(function (result) {
+                var expected;
+                expected = fs.readFileSync(file('propagate-license-comment-to-header/separate-single-line-comment.expected.js'), 'utf-8');
+                expect(result).to.be.equal(expected);
+                done();
+            }).catch(done);
+        });
     });
 
     describe('preserve-license-comment', function () {
@@ -163,6 +187,30 @@ describe('cli', function () {
             ]).then(function (result) {
                 var expected;
                 expected = fs.readFileSync(file('preserve-license-comment/license-line-2.expected.js'), 'utf-8');
+                expect(result).to.be.equal(expected);
+                done();
+            }).catch(done);
+        });
+
+        it('single line comment blocks are concatnated', function (done) {
+            spawn(esmangle, [
+                '--preserve-license-comment',
+                file('preserve-license-comment/single-line-comment.js')
+            ]).then(function (result) {
+                var expected;
+                expected = fs.readFileSync(file('preserve-license-comment/single-line-comment.expected.js'), 'utf-8');
+                expect(result).to.be.equal(expected);
+                done();
+            }).catch(done);
+        });
+
+        it('single line comment blocks are concatnated and separated', function (done) {
+            spawn(esmangle, [
+                '--preserve-license-comment',
+                file('preserve-license-comment/separate-single-line-comment.js')
+            ]).then(function (result) {
+                var expected;
+                expected = fs.readFileSync(file('preserve-license-comment/separate-single-line-comment.expected.js'), 'utf-8');
                 expect(result).to.be.equal(expected);
                 done();
             }).catch(done);
