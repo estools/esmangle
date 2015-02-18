@@ -125,7 +125,7 @@
     }
 
     function CommentBlock(comment) {
-        this.comments = [comment]
+        this.comments = [comment];
     }
 
     CommentBlock.prototype.append = function (comment) {
