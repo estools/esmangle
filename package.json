@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "escodegen": "^1.6.1",
-    "escope": "~2.0.0",
+    "escope": "~2.0.6",
     "esprima": "^2.0.0",
     "esshorten": "~1.1.0",
     "estraverse": "~1.9.0",

@@ -150,7 +150,7 @@ module.exports = function (grunt) {
             });
         }, function (err) {
             if (err) {
-                log.error();
+                log.error(err);
                 done(false);
             } else {
                 log.ok();

@@ -206,7 +206,7 @@
             comment: preserveLicenseComment || propagateLicenseComment
         });
 
-        comments = concatSingleLineComments(content, tree.comments);
+        comments = concatSingleLineComments(content, tree.comments || []);
 
         if (preserveLicenseComment || propagateLicenseComment) {
             licenses = comments.reduce(function (results, commentBlock) {
