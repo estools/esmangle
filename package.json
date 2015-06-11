@@ -25,6 +25,7 @@
     "url": "http://github.com/estools/esmangle.git"
   },
   "dependencies": {
+    "camel-case": "^1.1.2",
     "escodegen": "^1.6.1",
     "escope": "~2.0.6",
     "esprima": "^2.0.0",
