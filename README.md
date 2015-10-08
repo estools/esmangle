@@ -7,47 +7,59 @@ mangler / minifier for [Parser API](https://developer.mozilla.org/en/SpiderMonke
 
 esmangle can be used in a web browser: <a href="http://constellation.github.com/esmangle/javascripts/esmangle.js" target="_blank">Download</a>
 
-    <script src="esmangle.js"></script>
+```html
+<script src="esmangle.js"></script>
+```
 
 
 Node.js application via the package manager:
 
-    npm install esmangle
+```sh
+npm install esmangle
+```
 
 If you would like to use latest esmangle in a browser, you can build `build/esmangle.min.js`:
 
-    npm run-script build
+```sh
+npm run-script build
+```
 
 
 ### Usage
 
 A simple example: the program
 
-    var ast = esprima.parse(code);
-    var result = esmangle.mangle(ast);  // gets mangled AST
-    console.log(escodegen.generate(result));  // dump AST
+```js
+var ast = esprima.parse(code);
+var result = esmangle.mangle(ast);  // gets mangled AST
+console.log(escodegen.generate(result));  // dump AST
+```
 
 Or you can simply use this `esmangle` command in the shell.
 
-    $ esmangle file.js
+```sh
+$ esmangle file.js
+```
 
 Get more compressed result: (in Node.js)
 
-    var ast = esprima.parse(code);
-    // Get optimized AST
-    var optimized = esmangle.optimize(ast, null);
-    // gets mangled AST
-    var result = esmangle.mangle(optimized);
-    console.log(escodegen.generate(result, {
-        format: {
-            renumber: true,
-            hexadecimal: true,
-            escapeless: true,
-            compact: true,
-            semicolons: false,
-            parentheses: false
-        }
-    }));  // dump AST
+```js
+var ast = esprima.parse(code);
+// Get optimized AST
+var optimized = esmangle.optimize(ast, null);
+// gets mangled AST
+var result = esmangle.mangle(optimized);
+console.log(escodegen.generate(result, {
+    format: {
+        renumber: true,
+        hexadecimal: true,
+        escapeless: true,
+        compact: true,
+        semicolons: false,
+        parentheses: false
+    }
+}));  // dump AST
+```
 
 
 ### Design
