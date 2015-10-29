@@ -29,9 +29,9 @@
     "escodegen": "~1.6.1",
     "escope": "~2.0.6",
     "esprima": "^2.0.0",
+    "estraverse": "~4.1.1",
+    "esutils": "~2.0.2",
     "esshorten": "~1.1.0",
-    "estraverse": "~1.9.0",
-    "esutils": "~1.1.6",
     "isarray": "0.0.1",
     "optionator": "^0.5.0",
     "source-map": "^0.4.1"
